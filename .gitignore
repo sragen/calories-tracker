@@ -15,6 +15,7 @@ backend/src/main/resources/application-local.yml
 # Build outputs
 backend/build/
 backend/.gradle/
+backend/.kotlin/
 admin/.next/
 admin/node_modules/
 mobile/build/
