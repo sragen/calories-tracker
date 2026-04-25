@@ -1,0 +1,21 @@
+# Copy file ini: cp application-local.yml.example application-local.yml
+# application-local.yml tidak di-commit ke git
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/app_db
+    username: postgres
+    password: postgres
+  jpa:
+    show-sql: true
+
+app:
+  name: "Your Product Name"
+  jwt:
+    secret: "local-dev-secret-key-minimum-32-characters-long!!"
+    expiration-ms: 86400000  # 24 jam
+
+logging:
+  level:
+    com.company.app: DEBUG
+    org.hibernate.SQL: DEBUG
