@@ -35,10 +35,10 @@ CREATE INDEX idx_users_role   ON users(role)   WHERE deleted_at IS NULL;
 CREATE INDEX idx_users_status ON users(status) WHERE deleted_at IS NULL;
 
 -- Seed super admin — ganti password setelah deploy pertama
--- password di bawah = bcrypt("Admin@12345")
+-- password di bawah = bcrypt("admin123")
 INSERT INTO users (email, password, name, role, status) VALUES
     ('superadmin@company.com',
-     '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iAt6Z3Uo',
+     '$2a$10$tggKyN3GsTRzQXBenrgd.elAd9SAe03/uBBQg0HJoJzX/h8XNykAi',
      'Super Admin', 'SUPER_ADMIN', 'ACTIVE');
 
 CREATE TABLE refresh_tokens (

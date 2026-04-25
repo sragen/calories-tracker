@@ -30,7 +30,8 @@ class SecurityConfig(private val jwtFilter: JwtFilter) {
                 "/swagger-ui.html",
                 "/v3/api-docs/**"
             ).permitAll()
-            auth.requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+            // admin routes require authentication; fine-grained RBAC handled by @RequiresPermission AOP
+            auth.requestMatchers("/api/admin/**").authenticated()
             auth.anyRequest().authenticated()
         }
         .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
