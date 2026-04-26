@@ -36,3 +36,4 @@ mobile/iosApp/DerivedData/
 # Logs
 *.log
 logs/
+admin/.env.local
