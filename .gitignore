@@ -37,3 +37,8 @@ mobile/iosApp/DerivedData/
 *.log
 logs/
 admin/.env.local
+mobile/local.properties
+mobile/.kotlin/
+mobile/androidApp/build/
+mobile/composeApp/build/
+mobile/shared/build/
