@@ -139,7 +139,7 @@ cd mobile
 ### iOS: "No such module 'shared'"
 ```bash
 cd mobile
-./gradlew :shared-kmm:embedAndSignAppleFrameworkForXcode
+./gradlew :shared:embedAndSignAppleFrameworkForXcode
 # Lalu rebuild di Xcode
 ```
 
@@ -153,6 +153,6 @@ Pastikan `NEXT_PUBLIC_API_URL` di `admin/config/app.config.ts` mengarah ke backe
 | Backend API | 8080 | http://localhost:8080 |
 | Swagger UI | 8080 | http://localhost:8080/swagger-ui.html |
 | Admin Panel | 3000 | http://localhost:3000 |
-| PostgreSQL | 5432 | localhost:5432 |
+| PostgreSQL | 5433 | localhost:5433 |
 | MinIO Console | 9001 | http://localhost:9001 |
 | MinIO API | 9000 | http://localhost:9000 |

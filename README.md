@@ -7,11 +7,11 @@ Clone repo ini → ganti branding → mulai coding domain bisnis.
 
 | Layer | Teknologi |
 |---|---|
-| Backend | Spring Boot 3.x (Kotlin) + PostgreSQL |
-| Admin Panel | Next.js 15 + Shadcn/UI + Tanstack Table |
-| Mobile | Kotlin Multiplatform + Compose Multiplatform |
-| Auth | Spring Security + JWT |
-| Local Dev | Docker Compose |
+| Backend | Spring Boot 3.4.1 (Kotlin 2.1, Java 21) + PostgreSQL + Flyway |
+| Admin Panel | Next.js 16 + Shadcn/UI + Tanstack Table v8 |
+| Mobile | KMM + Compose Multiplatform 1.7.3 (Android/iOS) |
+| Auth | Spring Security + JWT (access 24h / refresh 30d) |
+| Local Dev | Docker Compose (PostgreSQL port 5433, MinIO) |
 
 ## Struktur Repo
 
@@ -20,10 +20,10 @@ app-template/
 ├── backend/          # Spring Boot REST API
 ├── admin/            # Admin panel (Next.js)
 ├── mobile/
-│   ├── shared-kmm/   # KMM shared logic (domain, data, ViewModel)
+│   ├── shared/       # KMM shared logic (network, data, storage)
 │   ├── composeApp/   # Compose Multiplatform shared UI
 │   ├── androidApp/   # Android entry point
-│   └── iosApp/       # iOS entry point
+│   └── iosApp/       # iOS entry point (Swift)
 ├── docs/             # Dokumentasi teknis
 └── docker-compose.yml
 ```
@@ -50,6 +50,8 @@ cd admin && npm install && npm run dev
 # API:          http://localhost:8080
 # Swagger UI:   http://localhost:8080/swagger-ui.html
 # Admin Panel:  http://localhost:3000
+#
+# Login superadmin: superadmin@company.com / admin123
 ```
 
 ## Cara Buat Produk Baru
