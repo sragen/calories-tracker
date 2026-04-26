@@ -8,6 +8,8 @@ import com.company.app.shared.data.repository.ConfigRepository
 import com.company.app.shared.storage.TokenStorage
 import com.company.app.ui.home.HomeViewModel
 import com.company.app.ui.login.LoginViewModel
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.runBlocking
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
@@ -23,9 +25,10 @@ val appModule = module {
     single { TokenStorage(get()) }
 
     single {
+        val tokenStorage: TokenStorage = get()
         ApiService(
             baseUrl = BASE_URL,
-            tokenProvider = { null }
+            tokenProvider = { runBlocking { tokenStorage.accessToken.firstOrNull() } }
         )
     }
 
