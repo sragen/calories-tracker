@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/data-table"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -30,17 +29,25 @@ interface PageResponse {
   page: { totalPages: number; number: number }
 }
 
-const roleColor: Record<string, string> = {
-  SUPER_ADMIN: "destructive",
-  ADMIN: "default",
-  STAFF: "secondary",
-  USER: "outline",
+const roleBadge: Record<string, string> = {
+  SUPER_ADMIN: "bg-rose-500/15 text-rose-400 border-rose-500/20",
+  ADMIN: "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
+  STAFF: "bg-amber-500/15 text-amber-400 border-amber-500/20",
+  USER: "bg-zinc-500/15 text-zinc-400 border-zinc-500/20",
 }
 
-const statusColor: Record<string, string> = {
-  ACTIVE: "default",
-  INACTIVE: "secondary",
-  SUSPENDED: "destructive",
+const statusBadge: Record<string, string> = {
+  ACTIVE: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+  INACTIVE: "bg-zinc-500/15 text-zinc-400 border-zinc-500/20",
+  SUSPENDED: "bg-rose-500/15 text-rose-400 border-rose-500/20",
+}
+
+function ColorBadge({ label, className }: { label: string; className: string }) {
+  return (
+    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${className}`}>
+      {label}
+    </span>
+  )
 }
 
 export default function UsersPage() {
@@ -87,18 +94,20 @@ export default function UsersPage() {
       accessorKey: "role",
       header: "Role",
       cell: ({ row }) => (
-        <Badge variant={roleColor[row.original.role] as "default" | "secondary" | "destructive" | "outline" ?? "outline"}>
-          {row.original.role}
-        </Badge>
+        <ColorBadge
+          label={row.original.role}
+          className={roleBadge[row.original.role] ?? roleBadge.USER}
+        />
       ),
     },
     {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => (
-        <Badge variant={statusColor[row.original.status] as "default" | "secondary" | "destructive" | "outline" ?? "outline"}>
-          {row.original.status}
-        </Badge>
+        <ColorBadge
+          label={row.original.status}
+          className={statusBadge[row.original.status] ?? statusBadge.INACTIVE}
+        />
       ),
     },
     {
@@ -137,7 +146,7 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Users</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Users</h1>
         <span className="text-sm text-muted-foreground">
           {data?.page.totalPages ? `Page ${page + 1} of ${data.page.totalPages}` : ""}
         </span>

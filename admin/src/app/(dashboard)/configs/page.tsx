@@ -69,7 +69,7 @@ export default function ConfigsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Config & Feature Flags</h1>
+      <h1 className="text-2xl font-bold tracking-tight">Config & Feature Flags</h1>
 
       <div className="grid gap-4">
         {configs.map((config) => (
