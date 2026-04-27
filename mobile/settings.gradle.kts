@@ -1,4 +1,4 @@
-rootProject.name = "AppTemplate"
+rootProject.name = "CalSnap"
 
 pluginManagement {
     repositories {

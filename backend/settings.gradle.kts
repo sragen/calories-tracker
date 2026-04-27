@@ -1,1 +1,1 @@
-rootProject.name = "app-template-backend"
+rootProject.name = "calsnap-backend"

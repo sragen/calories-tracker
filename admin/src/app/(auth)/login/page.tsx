@@ -54,13 +54,13 @@ export default function LoginPage() {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
             <Zap className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="text-lg font-semibold text-sidebar-foreground">App Template</span>
+          <span className="text-lg font-semibold text-sidebar-foreground">CalSnap</span>
         </div>
         <blockquote className="space-y-2">
           <p className="text-xl font-medium text-sidebar-foreground leading-relaxed">
-            "Ship fast, scale confidently — your admin control plane."
+            "Snap your food. Track your macros. Hit your goals."
           </p>
-          <footer className="text-sm text-sidebar-foreground/50">Built for developers</footer>
+          <footer className="text-sm text-sidebar-foreground/50">CalSnap Admin Panel</footer>
         </blockquote>
       </div>
 
@@ -71,7 +71,7 @@ export default function LoginPage() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <Zap className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="text-base font-semibold">App Template</span>
+          <span className="text-base font-semibold">CalSnap</span>
         </div>
 
         <div className="w-full max-w-sm space-y-6">

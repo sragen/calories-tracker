@@ -9,8 +9,8 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Admin Panel",
-  description: "App Template Admin Panel",
+  title: "CalSnap Admin",
+  description: "CalSnap Admin Panel — manage users, foods, and subscriptions",
 };
 
 export default function RootLayout({
