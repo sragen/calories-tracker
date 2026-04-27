@@ -22,5 +22,8 @@ class AppException(
 
         fun conflict(message: String) =
             AppException(HttpStatus.CONFLICT, "CONFLICT", message)
+
+        fun paymentRequired(message: String = "Active subscription required") =
+            AppException(HttpStatus.PAYMENT_REQUIRED, "PAYMENT_REQUIRED", message)
     }
 }

@@ -80,22 +80,57 @@ export interface FoodPage {
   page: { totalPages: number; number: number; totalElements: number }
 }
 
-export interface SubscriptionPlan {
-  id: number
-  name: string
-  description: string | null
-  priceIdr: number
-  durationDays: number
-  features: string[]
+export interface AdminSubscription {
+  subscriptionId: number
+  userId: number
+  userName: string
+  userEmail: string | null
+  planName: string
+  status: string
+  platform: string
+  currentPeriodEnd: string | null
+  createdAt: string
 }
 
-export interface UserSubscriptionResponse {
+export interface WhitelistEntry {
   id: number
-  plan: SubscriptionPlan
-  status: "PENDING" | "ACTIVE" | "EXPIRED" | "CANCELLED"
-  startedAt: string | null
-  expiresAt: string | null
-  paymentId: string | null
-  snapToken: string | null
+  userId: number
+  userName: string
+  userEmail: string | null
+  note: string | null
+  addedByName: string
   createdAt: string
+}
+
+export interface PageResponse<T> {
+  content: T[]
+  page: { totalPages: number; number: number; totalElements: number }
+}
+
+export const subscriptionApi = {
+  list: (page: number, status?: string, platform?: string) => {
+    const params = new URLSearchParams({ page: String(page), size: "20", sort: "createdAt,desc" })
+    if (status) params.set("status", status)
+    if (platform) params.set("platform", platform)
+    return request<PageResponse<AdminSubscription>>(`/api/admin/subscriptions?${params}`)
+  },
+}
+
+export const whitelistApi = {
+  list: (page: number) =>
+    request<PageResponse<WhitelistEntry>>(`/api/admin/whitelist?page=${page}&size=20`),
+  add: (userId: number, note?: string) =>
+    request<WhitelistEntry>("/api/admin/whitelist", {
+      method: "POST",
+      body: JSON.stringify({ userId, note: note || null }),
+    }),
+  remove: (userId: number) =>
+    request<void>(`/api/admin/whitelist/${userId}`, { method: "DELETE" }),
+}
+
+export const userSearchApi = {
+  search: (email: string) =>
+    request<PageResponse<{ id: number; name: string; email: string | null; role: string }>>(
+      `/api/admin/users?page=0&size=5&email=${encodeURIComponent(email)}`
+    ),
 }

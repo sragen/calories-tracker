@@ -3,40 +3,51 @@
 import { useEffect, useState, useCallback } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/data-table"
-import { api, UserSubscriptionResponse } from "@/lib/api"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { subscriptionApi, AdminSubscription } from "@/lib/api"
 import { toast } from "sonner"
+import { ChevronDown } from "lucide-react"
 
-const STATUS_CLASSES: Record<string, string> = {
-  ACTIVE:    "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-  PENDING:   "bg-amber-500/15 text-amber-400 border-amber-500/20",
-  EXPIRED:   "bg-zinc-500/15 text-zinc-400 border-zinc-500/20",
-  CANCELLED: "bg-red-500/15 text-red-400 border-red-500/20",
+const statusBadge: Record<string, string> = {
+  TRIAL: "bg-violet-500/15 text-violet-400 border-violet-500/20",
+  ACTIVE: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+  PAST_DUE: "bg-amber-500/15 text-amber-400 border-amber-500/20",
+  EXPIRED: "bg-zinc-500/15 text-zinc-400 border-zinc-500/20",
+  CANCELLED: "bg-rose-500/15 text-rose-400 border-rose-500/20",
 }
 
-function StatusBadge({ status }: { status: string }) {
+const platformBadge: Record<string, string> = {
+  GOOGLE_PLAY: "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  APP_STORE: "bg-sky-500/15 text-sky-400 border-sky-500/20",
+}
+
+function ColorBadge({ label, className }: { label: string; className: string }) {
   return (
-    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${STATUS_CLASSES[status] ?? STATUS_CLASSES.PENDING}`}>
-      {status}
+    <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${className}`}>
+      {label}
     </span>
   )
 }
 
-function formatIdr(amount: number) {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount)
-}
-
-const STATUS_FILTERS = ["ALL", "ACTIVE", "PENDING", "EXPIRED", "CANCELLED"] as const
+const STATUS_OPTIONS = ["", "TRIAL", "ACTIVE", "PAST_DUE", "EXPIRED", "CANCELLED"]
+const PLATFORM_OPTIONS = ["", "GOOGLE_PLAY", "APP_STORE"]
 
 export default function SubscriptionsPage() {
-  const [data, setData] = useState<UserSubscriptionResponse[]>([])
-  const [loading, setLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState<string>("ALL")
+  const [data, setData] = useState<{ content: AdminSubscription[]; page: { totalPages: number; number: number; totalElements: number } } | null>(null)
   const [page, setPage] = useState(0)
+  const [status, setStatus] = useState("")
+  const [platform, setPlatform] = useState("")
+  const [loading, setLoading] = useState(true)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (p: number, s: string, pl: string) => {
     setLoading(true)
     try {
-      const res = await api.get<UserSubscriptionResponse[]>("/api/admin/subscriptions")
+      const res = await subscriptionApi.list(p, s || undefined, pl || undefined)
       setData(res)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load subscriptions")
@@ -45,99 +56,116 @@ export default function SubscriptionsPage() {
     }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load(page, status, platform) }, [page, status, platform, load])
 
-  const filtered = statusFilter === "ALL" ? data : data.filter(s => s.status === statusFilter)
-  const pageSize = 20
-  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize))
-  const paged = filtered.slice(page * pageSize, (page + 1) * pageSize)
+  function handleStatus(s: string) {
+    setStatus(s)
+    setPage(0)
+  }
 
-  const columns: ColumnDef<UserSubscriptionResponse>[] = [
+  function handlePlatform(pl: string) {
+    setPlatform(pl)
+    setPage(0)
+  }
+
+  const columns: ColumnDef<AdminSubscription>[] = [
     {
-      id: "plan",
-      header: "Plan",
+      accessorKey: "userName",
+      header: "User",
       cell: ({ row }) => (
         <div>
-          <p className="font-medium">{row.original.plan.name}</p>
-          <p className="text-xs text-muted-foreground">{formatIdr(row.original.plan.priceIdr)}</p>
+          <p className="font-medium">{row.original.userName}</p>
+          <p className="text-xs text-muted-foreground">{row.original.userEmail ?? "—"}</p>
         </div>
       ),
     },
     {
-      id: "status",
+      accessorKey: "planName",
+      header: "Plan",
+      cell: ({ row }) => <span className="text-sm">{row.original.planName}</span>,
+    },
+    {
+      accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => <StatusBadge status={row.original.status} />,
-    },
-    {
-      id: "started",
-      header: "Started",
-      cell: ({ row }) => row.original.startedAt
-        ? new Date(row.original.startedAt).toLocaleDateString("id-ID")
-        : "—",
-    },
-    {
-      id: "expires",
-      header: "Expires",
-      cell: ({ row }) => row.original.expiresAt
-        ? new Date(row.original.expiresAt).toLocaleDateString("id-ID")
-        : "—",
-    },
-    {
-      id: "payment",
-      header: "Payment ID",
       cell: ({ row }) => (
-        <span className="text-xs font-mono text-muted-foreground">
-          {row.original.paymentId ?? "—"}
-        </span>
+        <ColorBadge
+          label={row.original.status}
+          className={statusBadge[row.original.status] ?? "bg-zinc-500/15 text-zinc-400 border-zinc-500/20"}
+        />
       ),
     },
     {
-      id: "created",
-      header: "Created",
-      cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString("id-ID"),
+      accessorKey: "platform",
+      header: "Platform",
+      cell: ({ row }) => (
+        <ColorBadge
+          label={row.original.platform}
+          className={platformBadge[row.original.platform] ?? "bg-zinc-500/15 text-zinc-400 border-zinc-500/20"}
+        />
+      ),
+    },
+    {
+      accessorKey: "currentPeriodEnd",
+      header: "Expires",
+      cell: ({ row }) =>
+        row.original.currentPeriodEnd
+          ? new Date(row.original.currentPeriodEnd).toLocaleDateString()
+          : "—",
+    },
+    {
+      accessorKey: "createdAt",
+      header: "Started",
+      cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
     },
   ]
-
-  const activeCount = data.filter(s => s.status === "ACTIVE").length
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Subscriptions</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage user premium subscriptions
-          </p>
+          {data && (
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {data.page.totalElements} total
+            </p>
+          )}
         </div>
-        {activeCount > 0 && (
-          <span className="inline-flex items-center rounded-full bg-emerald-500/15 border border-emerald-500/20 px-3 py-1 text-sm font-medium text-emerald-400">
-            {activeCount} active
-          </span>
-        )}
-      </div>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+              {status || "All Statuses"}
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {STATUS_OPTIONS.map((s) => (
+                <DropdownMenuItem key={s || "all"} onClick={() => handleStatus(s)}>
+                  {s || "All Statuses"}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-      {/* Status filter tabs */}
-      <div className="flex gap-1 flex-wrap">
-        {STATUS_FILTERS.map(s => (
-          <button
-            key={s}
-            onClick={() => { setStatusFilter(s); setPage(0) }}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              statusFilter === s
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            }`}
-          >
-            {s} {s !== "ALL" && `(${data.filter(x => x.status === s).length})`}
-          </button>
-        ))}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm font-medium hover:bg-muted transition-colors">
+              {platform || "All Platforms"}
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {PLATFORM_OPTIONS.map((pl) => (
+                <DropdownMenuItem key={pl || "all"} onClick={() => handlePlatform(pl)}>
+                  {pl || "All Platforms"}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <DataTable
         columns={columns}
-        data={paged}
+        data={data?.content ?? []}
         pageIndex={page}
-        pageCount={pageCount}
+        pageCount={data?.page.totalPages ?? 1}
         onPageChange={setPage}
         isLoading={loading}
       />

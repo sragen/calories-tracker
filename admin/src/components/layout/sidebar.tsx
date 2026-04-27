@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Users, Settings, LayoutDashboard, LogOut, Zap, Utensils, ClipboardCheck, Upload, CreditCard, BarChart2 } from "lucide-react"
+import { Users, Settings, LayoutDashboard, LogOut, Zap, Utensils, ClipboardCheck, Upload, CreditCard, BarChart2, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { clearAuthCookie } from "@/lib/auth-cookie"
 
@@ -13,6 +13,7 @@ const navItems = [
   { href: "/foods/pending", label: "Pending Review", icon: ClipboardCheck },
   { href: "/foods/import", label: "Import CSV", icon: Upload },
   { href: "/subscriptions", label: "Subscriptions", icon: CreditCard },
+  { href: "/whitelist", label: "Whitelist", icon: ShieldCheck },
   { href: "/analytics", label: "Analytics", icon: BarChart2 },
   { href: "/configs", label: "Config & Flags", icon: Settings },
 ]
@@ -34,7 +35,7 @@ export function Sidebar() {
           <Zap className="h-4 w-4 text-primary-foreground" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-sidebar-foreground">Calories Tracker</p>
+          <p className="text-sm font-semibold text-sidebar-foreground">CalSnap</p>
           <p className="text-xs text-sidebar-foreground/50">Admin Panel</p>
         </div>
       </div>

@@ -34,9 +34,16 @@ app:
     public-url: ${MINIO_PUBLIC_URL:http://localhost:9000}
   gemini:
     api-key: ${GEMINI_API_KEY:your-gemini-api-key-here}
-  midtrans:
-    server-key: ${MIDTRANS_SERVER_KEY:SB-Mid-server-your-key-here}
-    is-production: ${MIDTRANS_PRODUCTION:false}
+  subscription:
+    grace-period-days: ${SUBSCRIPTION_GRACE_PERIOD_DAYS:3}
+    google-play:
+      service-account-json: ${GOOGLE_PLAY_SERVICE_ACCOUNT_JSON:}
+      package-name: ${GOOGLE_PLAY_PACKAGE_NAME:com.company.app}
+    app-store:
+      bundle-id: ${APP_STORE_BUNDLE_ID:com.company.app}
+      issuer-id: ${APP_STORE_ISSUER_ID:}
+      key-id: ${APP_STORE_KEY_ID:}
+      private-key: ${APP_STORE_PRIVATE_KEY:}
 
 springdoc:
   swagger-ui:

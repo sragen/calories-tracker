@@ -1,56 +1,83 @@
 package com.company.app.ui.subscription
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import com.company.app.shared.data.model.PremiumStatusResponse
-import com.company.app.shared.data.model.SnapTokenResponse
-import com.company.app.shared.data.model.SubscriptionPlan
-import com.company.app.shared.data.repository.SubscriptionRepository
+import com.company.app.shared.data.model.EntitlementResponse
+import com.company.app.shared.data.repository.BillingRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-data class SubscriptionState(
-    val isLoading: Boolean = true,
-    val plans: List<SubscriptionPlan> = emptyList(),
-    val status: PremiumStatusResponse? = null,
-    val isPurchasing: Boolean = false,
-    val snapToken: SnapTokenResponse? = null,
-    val error: String? = null
-)
+sealed class SubscriptionState {
+    object Loading : SubscriptionState()
+    data class Entitled(val source: String, val status: String?, val expiresAt: String?) : SubscriptionState()
+    object Paywall : SubscriptionState()
+    object Purchasing : SubscriptionState()
+    data class Error(val message: String) : SubscriptionState()
+}
 
-class SubscriptionViewModel(private val repo: SubscriptionRepository) {
+class SubscriptionViewModel(private val billingRepo: BillingRepository) {
+    // SupervisorJob so one failed child doesn't cancel siblings; cancel via close()
+    private val job = SupervisorJob()
+    private val scope = CoroutineScope(Dispatchers.Main + job)
 
-    var state by mutableStateOf(SubscriptionState())
-        private set
+    private val _state = MutableStateFlow<SubscriptionState>(SubscriptionState.Loading)
+    val state: StateFlow<SubscriptionState> = _state
 
-    private val scope = CoroutineScope(Dispatchers.Main)
+    init { checkEntitlement() }
 
-    init { load() }
-
-    private fun load() {
+    fun checkEntitlement() {
+        _state.value = SubscriptionState.Loading
         scope.launch {
-            val plansResult = repo.getPlans()
-            val statusResult = repo.getStatus()
-            state = state.copy(
-                isLoading = false,
-                plans = plansResult.getOrDefault(emptyList()),
-                status = statusResult.getOrNull()
+            billingRepo.getEntitlement().fold(
+                onSuccess = { _state.value = it.toState() },
+                onFailure = { _state.value = SubscriptionState.Error(it.message ?: "Failed to check entitlement") }
             )
         }
     }
 
-    fun purchase(planId: Long) {
-        state = state.copy(isPurchasing = true, error = null, snapToken = null)
+    fun purchase() {
+        _state.value = SubscriptionState.Purchasing
         scope.launch {
-            repo.purchase(planId).fold(
-                onSuccess = { token -> state = state.copy(isPurchasing = false, snapToken = token) },
-                onFailure = { e -> state = state.copy(isPurchasing = false, error = e.message) }
+            billingRepo.purchase().fold(
+                onSuccess = { _state.value = it.toState() },
+                onFailure = { e ->
+                    val msg = e.message ?: "Purchase failed"
+                    _state.value = if (msg.contains("cancelled", ignoreCase = true))
+                        SubscriptionState.Paywall
+                    else
+                        SubscriptionState.Error(msg)
+                }
             )
         }
     }
 
-    fun clearSnapToken() { state = state.copy(snapToken = null) }
-    fun clearError() { state = state.copy(error = null) }
+    fun restore() {
+        _state.value = SubscriptionState.Purchasing
+        scope.launch {
+            billingRepo.restore().fold(
+                onSuccess = { _state.value = it.toState() },
+                onFailure = { _state.value = SubscriptionState.Error(it.message ?: "Nothing to restore") }
+            )
+        }
+    }
+
+    // Call when the screen owning this ViewModel is permanently destroyed
+    fun close() {
+        billingRepo.release()
+        scope.cancel()
+    }
+
+    private fun EntitlementResponse.toState(): SubscriptionState =
+        if (entitled) {
+            SubscriptionState.Entitled(
+                source = source ?: "SUBSCRIPTION",
+                status = status,
+                expiresAt = expiresAt
+            )
+        } else {
+            SubscriptionState.Paywall
+        }
 }

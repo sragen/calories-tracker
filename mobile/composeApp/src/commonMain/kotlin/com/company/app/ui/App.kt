@@ -1,6 +1,7 @@
 package com.company.app.ui
 
 import androidx.compose.runtime.*
+import kotlinx.coroutines.flow.StateFlow
 import com.company.app.shared.data.repository.AuthRepository
 import com.company.app.shared.data.repository.BodyProfileRepository
 import com.company.app.ui.aiscan.AiScanResultScreen
@@ -24,8 +25,9 @@ import com.company.app.ui.search.SearchFoodScreen
 import com.company.app.ui.search.SearchFoodViewModel
 import com.company.app.ui.submit.SubmitFoodScreen
 import com.company.app.ui.submit.SubmitFoodViewModel
-import com.company.app.ui.subscription.MidtransPaymentScreen
-import com.company.app.ui.subscription.SubscriptionScreen
+import com.company.app.ui.subscription.PaywallScreen
+import com.company.app.ui.subscription.SubscriptionState
+import com.company.app.ui.subscription.SubscriptionStatusScreen
 import com.company.app.ui.subscription.SubscriptionViewModel
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -40,7 +42,6 @@ fun App() {
     var pendingMealType by remember { mutableStateOf("SNACK") }
     var scannedBarcode by remember { mutableStateOf("") }
     var pendingAiImageBytes by remember { mutableStateOf<ByteArray?>(null) }
-    var snapToken by remember { mutableStateOf("") }
     var isCheckingAuth by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
@@ -100,7 +101,7 @@ fun App() {
                     pendingMealType = mealType
                     currentScreen = Screen.AiScan
                 },
-                onSubscription = { currentScreen = Screen.Subscription },
+                onSubscription = { currentScreen = Screen.Paywall },
                 onAnalytics = { currentScreen = Screen.Analytics },
                 onProfile = { currentScreen = Screen.Profile }
             )
@@ -153,14 +154,22 @@ fun App() {
                 onBack = { currentScreen = Screen.Home }
             )
         }
-        Screen.Subscription -> {
+        Screen.Paywall -> {
             val viewModel: SubscriptionViewModel = koinInject()
-            SubscriptionScreen(
+            val state by viewModel.state.collectAsState()
+            if (state is SubscriptionState.Entitled) {
+                currentScreen = Screen.SubscriptionStatus
+            } else {
+                PaywallScreen(
+                    viewModel = viewModel,
+                    onEntitled = { currentScreen = Screen.SubscriptionStatus }
+                )
+            }
+        }
+        Screen.SubscriptionStatus -> {
+            val viewModel: SubscriptionViewModel = koinInject()
+            SubscriptionStatusScreen(
                 viewModel = viewModel,
-                onSnapToken = { token ->
-                    snapToken = token
-                    currentScreen = Screen.MidtransPayment
-                },
                 onBack = { currentScreen = Screen.Home }
             )
         }
@@ -168,15 +177,8 @@ fun App() {
             val viewModel: AnalyticsViewModel = koinInject()
             AnalyticsScreen(
                 viewModel = viewModel,
-                onUpgrade = { currentScreen = Screen.Subscription },
+                onUpgrade = { currentScreen = Screen.Paywall },
                 onBack = { currentScreen = Screen.Home }
-            )
-        }
-        Screen.MidtransPayment -> {
-            MidtransPaymentScreen(
-                snapToken = snapToken,
-                onFinished = { currentScreen = Screen.Home },
-                onError = { currentScreen = Screen.Subscription }
             )
         }
         Screen.Profile -> {

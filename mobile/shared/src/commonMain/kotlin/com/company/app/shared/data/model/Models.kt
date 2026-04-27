@@ -245,44 +245,42 @@ data class DailyRangeSummary(
     val totalFatG: Double
 )
 
-// ── Subscription ─────────────────────────────────────────────────
+// ── Subscription (IAP) ───────────────────────────────────────────
 
 @Serializable
-data class SubscriptionPlan(
-    val id: Long,
-    val name: String,
-    val description: String? = null,
-    val priceIdr: Long,
-    val durationDays: Int,
-    val features: List<String> = emptyList()
-)
-
-@Serializable
-data class UserSubscriptionResponse(
-    val id: Long,
-    val plan: SubscriptionPlan,
-    val status: String,
-    val startedAt: String? = null,
+data class EntitlementResponse(
+    val entitled: Boolean,
+    val source: String? = null,
+    val status: String? = null,
     val expiresAt: String? = null,
-    val paymentId: String? = null,
-    val snapToken: String? = null,
-    val createdAt: String
+    val gracePeriodEndsAt: String? = null
 )
 
 @Serializable
-data class PremiumStatusResponse(
-    val isPremium: Boolean,
-    val subscription: UserSubscriptionResponse? = null
+data class VerifyPurchaseRequest(
+    val platform: String,
+    val planId: Long,
+    val purchaseToken: String,
+    val orderId: String
 )
 
 @Serializable
-data class PurchaseRequest(val planId: Long)
+data class RestorePurchaseRequest(
+    val platform: String,
+    val originalTransactionId: String
+)
 
 @Serializable
-data class SnapTokenResponse(
-    val snapToken: String,
+data class SubscriptionStatusResponse(
     val subscriptionId: Long,
-    val redirectUrl: String
+    val planName: String,
+    val priceIdr: Long,
+    val status: String,
+    val platform: String,
+    val trialEndsAt: String? = null,
+    val currentPeriodStart: String? = null,
+    val currentPeriodEnd: String? = null,
+    val cancelledAt: String? = null
 )
 
 // ── AI Scan ───────────────────────────────────────────────────────

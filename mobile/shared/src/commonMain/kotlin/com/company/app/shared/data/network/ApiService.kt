@@ -144,20 +144,27 @@ class ApiService(
         return result["streak"] ?: 0
     }
 
-    // ── Subscriptions ─────────────────────────────────────────────
+    // ── Subscriptions (IAP) ───────────────────────────────────────
 
-    suspend fun getSubscriptionPlans(): List<SubscriptionPlan> =
-        client.get("$baseUrl/api/subscriptions/plans") { auth() }.body()
+    suspend fun getEntitlement(): EntitlementResponse =
+        client.get("$baseUrl/api/subscription/entitlement") { auth() }.body()
 
-    suspend fun getPremiumStatus(): PremiumStatusResponse =
-        client.get("$baseUrl/api/subscriptions/me") { auth() }.body()
-
-    suspend fun purchaseSubscription(planId: Long): SnapTokenResponse =
-        client.post("$baseUrl/api/subscriptions/purchase") {
+    suspend fun verifyPurchase(req: VerifyPurchaseRequest): EntitlementResponse =
+        client.post("$baseUrl/api/subscription/verify") {
             auth()
             contentType(ContentType.Application.Json)
-            setBody(PurchaseRequest(planId))
+            setBody(req)
         }.body()
+
+    suspend fun restorePurchase(req: RestorePurchaseRequest): EntitlementResponse =
+        client.post("$baseUrl/api/subscription/restore") {
+            auth()
+            contentType(ContentType.Application.Json)
+            setBody(req)
+        }.body()
+
+    suspend fun getSubscriptionStatus(): SubscriptionStatusResponse =
+        client.get("$baseUrl/api/subscription/status") { auth() }.body()
 
     // ── AI Scan ───────────────────────────────────────────────────
 

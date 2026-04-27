@@ -50,6 +50,12 @@ dependencies {
     // MinIO (file storage)
     implementation("io.minio:minio:8.5.17")
 
+    // Google Play receipt validation
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.23.0")
+
+    // Apple StoreKit JWS verification
+    implementation("com.nimbusds:nimbus-jose-jwt:9.40")
+
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")

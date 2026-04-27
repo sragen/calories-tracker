@@ -10,6 +10,8 @@ import com.company.app.shared.data.repository.ConfigRepository
 import com.company.app.shared.data.repository.DailyGoalRepository
 import com.company.app.shared.data.repository.FoodRepository
 import com.company.app.shared.data.repository.MealLogRepository
+import com.company.app.shared.billing.ActivityProvider
+import com.company.app.shared.data.repository.BillingRepository
 import com.company.app.shared.data.repository.SubscriptionRepository
 import com.company.app.shared.storage.RecentFoodStorage
 import com.company.app.shared.storage.TokenStorage
@@ -29,6 +31,8 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
 private const val BASE_URL = "http://10.0.2.2:8080"
+private const val PLAN_ID = 1L
+private const val PRODUCT_ID = "premium_monthly"
 
 val appModule = module {
     single {
@@ -57,6 +61,7 @@ val appModule = module {
     single { MealLogRepository(get()) }
     single { SubscriptionRepository(get()) }
     single { AiScanRepository(get()) }
+    single { BillingRepository(api = get(), planId = PLAN_ID, productId = PRODUCT_ID) }
 
     // ViewModels
     factory { LoginViewModel(get()) }
@@ -67,6 +72,6 @@ val appModule = module {
     factory { SubmitFoodViewModel(get()) }
     factory { ProfileViewModel(get(), get(), get(), get()) }
     factory { AiScanViewModel(get()) }
-    factory { SubscriptionViewModel(get()) }
+    factory { SubscriptionViewModel(get<BillingRepository>()) }
     factory { AnalyticsViewModel(get(), get()) }
 }
