@@ -19,7 +19,8 @@ class AdminUserController(private val service: AdminUserService) {
 
     @GetMapping
     @RequiresPermission(module = "USERS", action = Action.READ)
-    fun list(pageable: Pageable): Page<UserResponse> = service.findAll(pageable)
+    fun list(@RequestParam(required = false) q: String?, pageable: Pageable): Page<UserResponse> =
+        service.findAll(pageable, q)
 
     @GetMapping("/{id}")
     @RequiresPermission(module = "USERS", action = Action.READ)

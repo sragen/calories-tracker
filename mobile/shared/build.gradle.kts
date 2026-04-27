@@ -24,6 +24,7 @@ kotlin {
             implementation(libs.serialization.json)
             implementation(libs.datastore.preferences)
             implementation(libs.koin.core)
+            implementation(libs.datetime)
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)

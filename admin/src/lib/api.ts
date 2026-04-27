@@ -44,3 +44,58 @@ export const api = {
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
 }
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+export interface FoodCategory {
+  id: number
+  name: string
+  nameEn: string | null
+  icon: string | null
+  sortOrder: number
+}
+
+export interface FoodItem {
+  id: number
+  name: string
+  nameEn: string | null
+  categoryId: number | null
+  categoryName: string | null
+  caloriesPer100g: number
+  proteinPer100g: number
+  carbsPer100g: number
+  fatPer100g: number
+  fiberPer100g: number | null
+  defaultServingG: number
+  servingDescription: string | null
+  barcode: string | null
+  source: string
+  isVerified: boolean
+  isActive: boolean
+  createdAt: string
+}
+
+export interface FoodPage {
+  content: FoodItem[]
+  page: { totalPages: number; number: number; totalElements: number }
+}
+
+export interface SubscriptionPlan {
+  id: number
+  name: string
+  description: string | null
+  priceIdr: number
+  durationDays: number
+  features: string[]
+}
+
+export interface UserSubscriptionResponse {
+  id: number
+  plan: SubscriptionPlan
+  status: "PENDING" | "ACTIVE" | "EXPIRED" | "CANCELLED"
+  startedAt: string | null
+  expiresAt: string | null
+  paymentId: string | null
+  snapToken: string | null
+  createdAt: string
+}

@@ -1,23 +1,29 @@
 package com.company.app.ui.home
 
-import com.company.app.shared.data.model.AppConfigs
+import com.company.app.shared.data.model.DailySummary
+import com.company.app.shared.data.model.MealLogEntry
 import com.company.app.shared.data.repository.AuthRepository
-import com.company.app.shared.data.repository.ConfigRepository
+import com.company.app.shared.data.repository.MealLogRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 
 data class HomeState(
     val isLoading: Boolean = true,
-    val configs: AppConfigs? = null,
+    val diary: DailySummary? = null,
+    val streak: Int = 0,
     val error: String? = null,
-    val isLoggedOut: Boolean = false
+    val isLoggedOut: Boolean = false,
+    val deletingId: Long? = null
 )
 
 class HomeViewModel(
-    private val configRepo: ConfigRepository,
+    private val mealLogRepo: MealLogRepository,
     private val authRepo: AuthRepository
 ) {
     private val scope = CoroutineScope(Dispatchers.Main)
@@ -25,14 +31,26 @@ class HomeViewModel(
     private val _state = MutableStateFlow(HomeState())
     val state: StateFlow<HomeState> = _state
 
-    init { loadConfigs() }
+    init { loadDiary() }
 
-    fun loadConfigs() {
+    fun loadDiary() {
+        val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
         _state.value = HomeState(isLoading = true)
         scope.launch {
-            configRepo.fetchConfigs()
-                .onSuccess { _state.value = HomeState(isLoading = false, configs = it) }
-                .onFailure { _state.value = HomeState(isLoading = false, error = it.message) }
+            val diaryResult = mealLogRepo.getDiary(today)
+            val streak = mealLogRepo.getStreak().getOrDefault(0)
+            diaryResult
+                .onSuccess { _state.value = HomeState(isLoading = false, diary = it, streak = streak) }
+                .onFailure { _state.value = HomeState(isLoading = false, error = it.message, streak = streak) }
+        }
+    }
+
+    fun deleteLog(entry: MealLogEntry) {
+        _state.value = _state.value.copy(deletingId = entry.id)
+        scope.launch {
+            mealLogRepo.delete(entry.id)
+                .onSuccess { loadDiary() }
+                .onFailure { _state.value = _state.value.copy(deletingId = null, error = it.message) }
         }
     }
 

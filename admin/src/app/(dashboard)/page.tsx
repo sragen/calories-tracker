@@ -1,31 +1,27 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Users, Settings, TrendingUp, Activity } from "lucide-react"
+import Link from "next/link"
+import { Users, BookOpen, Star, TrendingUp } from "lucide-react"
 import { api } from "@/lib/api"
 
-interface PageData {
+interface Overview {
   totalUsers: number
-  activeConfigs: number
+  dau: number
+  mau: number
+  totalLogs: number
+  activePremium: number
+  totalRevenueIdr: number
 }
 
 function StatCard({
-  label,
-  value,
-  icon: Icon,
-  iconClass,
-  bgClass,
-  sub,
+  label, value, sub, icon: Icon, iconClass, bgClass, href,
 }: {
-  label: string
-  value: string | number
-  icon: React.ElementType
-  iconClass: string
-  bgClass: string
-  sub?: string
+  label: string; value: string | number; sub?: string
+  icon: React.ElementType; iconClass: string; bgClass: string; href?: string
 }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-5 flex items-start gap-4">
+  const content = (
+    <div className="rounded-xl border border-border bg-card p-5 flex items-start gap-4 transition-colors hover:bg-card/80">
       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${bgClass}`}>
         <Icon className={`h-5 w-5 ${iconClass}`} />
       </div>
@@ -36,21 +32,22 @@ function StatCard({
       </div>
     </div>
   )
+  return href ? <Link href={href}>{content}</Link> : content
+}
+
+function formatIdr(v: number) {
+  if (v >= 1_000_000) return `Rp ${(v / 1_000_000).toFixed(1)}jt`
+  if (v >= 1_000) return `Rp ${(v / 1_000).toFixed(0)}rb`
+  return `Rp ${v}`
 }
 
 export default function DashboardPage() {
-  const [data, setData] = useState<PageData | null>(null)
+  const [data, setData] = useState<Overview | null>(null)
 
   useEffect(() => {
-    Promise.all([
-      api.get<{ page: { totalElements: number } }>("/api/admin/users"),
-      api.get<Array<unknown>>("/api/admin/configs"),
-    ]).then(([users, configs]) => {
-      setData({
-        totalUsers: users.page.totalElements,
-        activeConfigs: configs.length,
-      })
-    }).catch(() => {})
+    api.get<Overview>("/api/admin/analytics/overview")
+      .then(setData)
+      .catch(() => {})
   }, [])
 
   const loading = data === null
@@ -65,36 +62,46 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
           label="Total Users"
-          value={loading ? "—" : data.totalUsers}
+          value={loading ? "—" : (data.totalUsers).toLocaleString()}
           icon={Users}
           bgClass="bg-indigo-500/15"
           iconClass="text-indigo-400"
           sub="Registered accounts"
+          href="/users"
         />
         <StatCard
-          label="Config Entries"
-          value={loading ? "—" : data.activeConfigs}
-          icon={Settings}
-          bgClass="bg-emerald-500/15"
-          iconClass="text-emerald-400"
-          sub="Active configurations"
-        />
-        <StatCard
-          label="Uptime"
-          value="99.9%"
+          label="Daily Active"
+          value={loading ? "—" : (data.dau).toLocaleString()}
           icon={TrendingUp}
-          bgClass="bg-amber-500/15"
-          iconClass="text-amber-400"
-          sub="Last 30 days"
-        />
-        <StatCard
-          label="System"
-          value="Healthy"
-          icon={Activity}
           bgClass="bg-sky-500/15"
           iconClass="text-sky-400"
-          sub="All services running"
+          sub="Users active today"
         />
+        <StatCard
+          label="Total Meal Logs"
+          value={loading ? "—" : (data.totalLogs).toLocaleString()}
+          icon={BookOpen}
+          bgClass="bg-emerald-500/15"
+          iconClass="text-emerald-400"
+          sub="Diary entries"
+          href="/analytics"
+        />
+        <StatCard
+          label="Revenue"
+          value={loading ? "—" : formatIdr(data.totalRevenueIdr)}
+          icon={Star}
+          bgClass="bg-amber-500/15"
+          iconClass="text-amber-400"
+          sub={loading ? "" : `${data.activePremium} active premium`}
+          href="/subscriptions"
+        />
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-5">
+        <p className="text-sm text-muted-foreground text-center py-8">
+          View detailed charts on the{" "}
+          <Link href="/analytics" className="text-primary hover:underline">Analytics page →</Link>
+        </p>
       </div>
     </div>
   )

@@ -18,8 +18,9 @@ class AdminUserService(
     private val allowedRoles = setOf("USER", "STAFF", "ADMIN", "SUPER_ADMIN")
     private val allowedStatuses = setOf("ACTIVE", "INACTIVE", "SUSPENDED")
 
-    fun findAll(pageable: Pageable): Page<UserResponse> =
-        userRepository.findAllActive(pageable).map { it.toResponse() }
+    fun findAll(pageable: Pageable, q: String?): Page<UserResponse> =
+        if (!q.isNullOrBlank()) userRepository.searchActive(q.trim(), pageable).map { it.toResponse() }
+        else userRepository.findAllActive(pageable).map { it.toResponse() }
 
     fun findById(id: Long): UserResponse =
         userRepository.findActiveById(id)?.toResponse()

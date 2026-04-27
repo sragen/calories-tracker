@@ -31,6 +31,7 @@ class SecurityConfig(private val jwtFilter: JwtFilter) {
             auth.requestMatchers(
                 "/api/auth/**",
                 "/api/config",
+                "/api/payment/notification",   // Midtrans webhook — no JWT
                 "/actuator/health",
                 "/swagger-ui/**",
                 "/swagger-ui.html",

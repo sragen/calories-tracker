@@ -77,17 +77,22 @@ Tiga fitur yang selalu ada di setiap produk:
 
 ## Dokumentasi
 
-### Panduan Utama
+### Product Design — Calories Tracker
+- [Product Overview](docs/product/OVERVIEW.md) — Visi, stack, fitur, model bisnis
+- [Database Schema](docs/product/DATABASE.md) — Semua tabel SQL V4–V12 + ERD
+- [API Specification](docs/product/API_SPEC.md) — Semua endpoint REST + request/response
+- [Mobile Flow](docs/product/MOBILE_FLOW.md) — Screen list + navigasi + wireframe
+- [Admin Panel Design](docs/product/ADMIN_PANEL.md) — Halaman admin + komponen
+- [Integrations](docs/product/INTEGRATIONS.md) — AI scan, barcode, MinIO, Midtrans
+- [Implementation Roadmap](docs/product/ROADMAP.md) — Phase 1–4 dengan checklist
+
+### Template Docs (Framework)
 - [Implementation Plan](docs/IMPLEMENTATION_PLAN.md) — Roadmap phase by phase membangun template
 - [Getting Started](docs/GETTING_STARTED.md) — Setup dari nol sampai semua jalan
 - [Panduan Produk Baru](docs/NEW_PRODUCT_GUIDE.md) — Checklist clone → produk baru
-
-### Arsitektur & Fitur
 - [Arsitektur Sistem](docs/ARCHITECTURE.md) — Design decisions dan system overview
 - [Core Features](docs/CORE_FEATURES.md) — User management, RBAC, Feature Flag
-- [Database Schema](docs/DATABASE_SCHEMA.md) — Semua tabel SQL + ERD
-
-### Per Layer
+- [Database Schema Template](docs/DATABASE_SCHEMA.md) — Tabel core template + ERD
 - [Backend Guide](docs/BACKEND.md) — Spring Boot patterns, RBAC usage, API endpoints
 - [Admin Panel Guide](docs/ADMIN_PANEL.md) — Cara tambah CRUD page baru
 - [Mobile Guide](docs/MOBILE.md) — KMM + CMP patterns, cara tambah screen

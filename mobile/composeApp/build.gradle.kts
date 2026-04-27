@@ -26,10 +26,20 @@ kotlin {
             implementation(libs.coroutines.core)
             implementation(libs.koin.core)
             implementation(libs.koin.compose)
+            implementation(libs.datetime)
         }
         androidMain.dependencies {
             implementation(libs.coroutines.android)
             implementation(libs.androidx.core)
+            // CameraX
+            implementation("androidx.camera:camera-core:1.3.4")
+            implementation("androidx.camera:camera-camera2:1.3.4")
+            implementation("androidx.camera:camera-lifecycle:1.3.4")
+            implementation("androidx.camera:camera-view:1.3.4")
+            // ML Kit barcode scanning
+            implementation("com.google.mlkit:barcode-scanning:17.3.0")
+            // Accompanist permissions
+            implementation("com.google.accompanist:accompanist-permissions:0.36.0")
         }
     }
 }

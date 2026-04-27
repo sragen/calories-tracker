@@ -15,6 +15,12 @@ class AuthRepository(
         api.getMe()
     }
 
+    suspend fun register(email: String, password: String, name: String): Result<UserResponse> = runCatching {
+        val auth = api.register(email, password, name)
+        storage.saveTokens(auth.accessToken, auth.refreshToken)
+        api.getMe()
+    }
+
     suspend fun logout() = storage.clearTokens()
 
     suspend fun isLoggedIn(): Boolean = storage.accessToken.firstOrNull() != null

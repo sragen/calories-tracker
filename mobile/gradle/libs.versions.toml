@@ -7,6 +7,7 @@ coroutines = "1.9.0"
 serialization = "1.7.3"
 datastore = "1.1.1"
 koin = "4.0.0"
+datetime = "0.6.1"
 androidx-activity = "1.9.3"
 androidx-core = "1.15.0"
 minSdk = "26"
@@ -26,6 +27,7 @@ ktor-client-logging         = { module = "io.ktor:ktor-client-logging", version.
 coroutines-core             = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 coroutines-android          = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 serialization-json          = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+datetime                    = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 
 # DataStore
 datastore-preferences             = { module = "androidx.datastore:datastore-preferences-core", version.ref = "datastore" }

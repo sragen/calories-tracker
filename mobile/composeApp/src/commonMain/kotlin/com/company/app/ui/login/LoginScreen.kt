@@ -14,7 +14,8 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    onNavigateToRegister: () -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     var email by remember { mutableStateOf("") }
@@ -80,6 +81,12 @@ fun LoginScreen(
             } else {
                 Text("Sign In")
             }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        TextButton(onClick = onNavigateToRegister, modifier = Modifier.fillMaxWidth()) {
+            Text("Don't have an account? Register")
         }
     }
 }
