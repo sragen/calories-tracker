@@ -13,7 +13,7 @@ interface FoodItemRepository : BaseRepository<FoodItem, Long> {
     @Query("""
         SELECT f FROM FoodItem f
         WHERE f.deletedAt IS NULL AND f.isActive = TRUE
-        AND (:q IS NULL OR LOWER(f.name) LIKE LOWER(CONCAT('%', :q, '%'))
+        AND (:q = '' OR LOWER(f.name) LIKE LOWER(CONCAT('%', :q, '%'))
              OR LOWER(COALESCE(f.nameEn, '')) LIKE LOWER(CONCAT('%', :q, '%')))
         AND (:categoryId IS NULL OR f.category.id = :categoryId)
         ORDER BY f.isVerified DESC, f.name ASC

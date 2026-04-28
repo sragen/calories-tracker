@@ -17,12 +17,15 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiScanResultScreen(
     viewModel: AiScanViewModel,
     mealType: String = "LUNCH",
+    isGuestMode: Boolean = false,
     onConfirmed: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onRegisterFromGuest: () -> Unit = {}
 ) {
     val state = viewModel.state
     val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
@@ -64,15 +67,19 @@ fun AiScanResultScreen(
         },
         bottomBar = {
             Surface(shadowElevation = 4.dp) {
-                Button(
-                    onClick = { viewModel.confirm(mealType, today) },
-                    enabled = state.selectedFoods.isNotEmpty() && !state.isConfirming,
-                    modifier = Modifier.fillMaxWidth().padding(16.dp)
-                ) {
-                    if (state.isConfirming) {
-                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else {
-                        Text("Catat ${state.selectedFoods.size} Makanan")
+                if (isGuestMode) {
+                    GuestResultBottomBar(onRegisterFromGuest = onRegisterFromGuest)
+                } else {
+                    Button(
+                        onClick = { viewModel.confirm(mealType, today) },
+                        enabled = state.selectedFoods.isNotEmpty() && !state.isConfirming,
+                        modifier = Modifier.fillMaxWidth().padding(16.dp)
+                    ) {
+                        if (state.isConfirming) {
+                            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text("Catat ${state.selectedFoods.size} Makanan")
+                        }
                     }
                 }
             }
@@ -122,6 +129,29 @@ fun AiScanResultScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun GuestResultBottomBar(onRegisterFromGuest: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(
+            text = "Create a free account to save these results",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Button(
+            onClick = onRegisterFromGuest,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Create Account & Save")
         }
     }
 }

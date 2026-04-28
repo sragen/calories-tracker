@@ -56,7 +56,7 @@ actual fun AiScanScreen(
                     cameraProviderFuture.addListener({
                         val cameraProvider = cameraProviderFuture.get()
                         val preview = Preview.Builder().build().also {
-                            it.surfaceProvider = previewView.surfaceProvider
+                            it.setSurfaceProvider(previewView.surfaceProvider)
                         }
                         val imageCapture = ImageCapture.Builder()
                             .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)

@@ -2,7 +2,7 @@ package com.company.app.ui.profile
 
 import com.company.app.shared.data.model.BodyProfileResponse
 import com.company.app.shared.data.model.DailyGoalResponse
-import com.company.app.shared.data.model.PremiumStatusResponse
+import com.company.app.shared.data.model.EntitlementResponse
 import com.company.app.shared.data.repository.AuthRepository
 import com.company.app.shared.data.repository.BodyProfileRepository
 import com.company.app.shared.data.repository.DailyGoalRepository
@@ -17,7 +17,7 @@ data class ProfileState(
     val isLoading: Boolean = true,
     val profile: BodyProfileResponse? = null,
     val goal: DailyGoalResponse? = null,
-    val premiumStatus: PremiumStatusResponse? = null,
+    val entitlement: EntitlementResponse? = null,
     val error: String? = null,
     val isLoggedOut: Boolean = false
 )
@@ -40,8 +40,8 @@ class ProfileViewModel(
         scope.launch {
             val profile = bodyProfileRepo.get().getOrNull()
             val goal = dailyGoalRepo.get().getOrNull()
-            val premiumStatus = subscriptionRepo.getStatus().getOrNull()
-            _state.value = ProfileState(isLoading = false, profile = profile, goal = goal, premiumStatus = premiumStatus)
+            val entitlement = subscriptionRepo.getEntitlement().getOrNull()
+            _state.value = ProfileState(isLoading = false, profile = profile, goal = goal, entitlement = entitlement)
         }
     }
 

@@ -1,7 +1,7 @@
 package com.company.app.modules.meal
 
 import com.company.app.common.auth.UserPrincipal
-import com.company.app.modules.subscription.SubscriptionService
+import com.company.app.modules.subscription.service.EntitlementService
 import jakarta.validation.Valid
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.ContentDisposition
@@ -17,7 +17,7 @@ import java.time.LocalDate
 @RequestMapping("/api/meal-logs")
 class MealLogController(
     private val mealLogService: MealLogService,
-    private val subscriptionService: SubscriptionService
+    private val entitlementService: EntitlementService
 ) {
 
     @GetMapping
@@ -64,7 +64,7 @@ class MealLogController(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) from: LocalDate,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) to: LocalDate
     ): ResponseEntity<ByteArray> {
-        if (!subscriptionService.isPremium(principal.id)) {
+        if (!entitlementService.checkEntitlement(principal.id).entitled) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
         val csv = mealLogService.exportCsv(principal.id, from, to)

@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -79,8 +78,8 @@ fun SearchFoodScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onOpenBarcodeScanner) {
-                        Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan barcode")
+                    TextButton(onClick = onOpenBarcodeScanner) {
+                        Text("Scan")
                     }
                 }
             )
@@ -201,9 +200,7 @@ private fun FoodListItem(food: FoodItem, onClick: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            if (food.categoryName != null) {
-                Text(food.categoryName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-            }
+            food.categoryName?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary) }
         }
         Text(
             "${food.defaultServingG.toInt()}g",
@@ -241,9 +238,7 @@ private fun FoodDetailSheet(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(food.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            if (food.categoryName != null) {
-                Text(food.categoryName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-            }
+            food.categoryName?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary) }
 
             // Nutrition preview
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {

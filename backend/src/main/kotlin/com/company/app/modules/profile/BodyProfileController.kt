@@ -21,8 +21,8 @@ class BodyProfileController(private val bodyProfileService: BodyProfileService) 
         @Valid @RequestBody req: BodyProfileRequest
     ): BodyProfileResponse = bodyProfileService.upsert(principal.id, req)
 
-    @GetMapping("/bmr-preview")
-    fun preview(@Valid @ModelAttribute req: BodyProfileRequest): BmrPreviewResponse =
+    @PostMapping("/bmr-preview")
+    fun preview(@Valid @RequestBody req: BodyProfileRequest): BmrPreviewResponse =
         bodyProfileService.preview(req)
 
     @GetMapping("/exists")

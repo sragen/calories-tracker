@@ -39,8 +39,8 @@ class AnalyticsViewModel(
 
     private fun load() {
         scope.launch {
-            val premiumResult = subRepo.getStatus()
-            val isPremium = premiumResult.getOrNull()?.isPremium == true
+            val premiumResult = subRepo.getEntitlement()
+            val isPremium = premiumResult.getOrNull()?.entitled == true
             state = state.copy(isPremium = isPremium)
 
             if (!isPremium) {

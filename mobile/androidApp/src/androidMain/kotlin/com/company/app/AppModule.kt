@@ -13,6 +13,7 @@ import com.company.app.shared.data.repository.MealLogRepository
 import com.company.app.shared.billing.ActivityProvider
 import com.company.app.shared.data.repository.BillingRepository
 import com.company.app.shared.data.repository.SubscriptionRepository
+import com.company.app.shared.storage.GuestStorage
 import com.company.app.shared.storage.RecentFoodStorage
 import com.company.app.shared.storage.TokenStorage
 import com.company.app.ui.aiscan.AiScanViewModel
@@ -42,6 +43,7 @@ val appModule = module {
     }
 
     single { TokenStorage(get()) }
+    single { GuestStorage(get()) }
     single { RecentFoodStorage(get()) }
 
     single {

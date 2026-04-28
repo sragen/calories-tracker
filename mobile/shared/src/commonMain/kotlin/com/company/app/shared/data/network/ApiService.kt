@@ -25,6 +25,7 @@ class ApiService(
             json(Json { ignoreUnknownKeys = true; isLenient = true })
         }
         install(Logging) { level = LogLevel.INFO }
+        expectSuccess = true
     }
 
     private fun HttpRequestBuilder.auth() {

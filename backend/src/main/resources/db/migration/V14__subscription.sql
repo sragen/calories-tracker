@@ -57,3 +57,6 @@ CREATE TABLE payment_events (
 
 CREATE INDEX idx_payment_events_subscription_id ON payment_events(subscription_id);
 CREATE INDEX idx_payment_events_user_id         ON payment_events(user_id);
+
+-- subscriptions: premium entitlement check (most frequent auth gate)
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user_status ON subscriptions(user_id, status, current_period_end);

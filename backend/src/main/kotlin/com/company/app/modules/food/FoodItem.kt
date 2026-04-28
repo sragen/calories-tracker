@@ -16,28 +16,28 @@ class FoodItem(
     @JoinColumn(name = "category_id")
     var category: FoodCategory? = null,
 
-    @Column(name = "calories_per_100g", nullable = false)
+    @Column(name = "calories_per_100g", nullable = false, columnDefinition = "numeric(8,2)")
     var caloriesPer100g: Double,
 
-    @Column(name = "protein_per_100g", nullable = false)
+    @Column(name = "protein_per_100g", nullable = false, columnDefinition = "numeric(8,2)")
     var proteinPer100g: Double = 0.0,
 
-    @Column(name = "carbs_per_100g", nullable = false)
+    @Column(name = "carbs_per_100g", nullable = false, columnDefinition = "numeric(8,2)")
     var carbsPer100g: Double = 0.0,
 
-    @Column(name = "fat_per_100g", nullable = false)
+    @Column(name = "fat_per_100g", nullable = false, columnDefinition = "numeric(8,2)")
     var fatPer100g: Double = 0.0,
 
-    @Column(name = "fiber_per_100g")
+    @Column(name = "fiber_per_100g", columnDefinition = "numeric(8,2)")
     var fiberPer100g: Double? = null,
 
-    @Column(name = "sugar_per_100g")
+    @Column(name = "sugar_per_100g", columnDefinition = "numeric(8,2)")
     var sugarPer100g: Double? = null,
 
-    @Column(name = "sodium_per_100mg")
+    @Column(name = "sodium_per_100mg", columnDefinition = "numeric(8,2)")
     var sodiumPer100mg: Double? = null,
 
-    @Column(name = "default_serving_g", nullable = false)
+    @Column(name = "default_serving_g", nullable = false, columnDefinition = "numeric(8,2)")
     var defaultServingG: Double = 100.0,
 
     @Column(name = "serving_description")

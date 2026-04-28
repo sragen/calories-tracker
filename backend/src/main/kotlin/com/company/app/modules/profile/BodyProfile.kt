@@ -14,10 +14,10 @@ class BodyProfile(
     @Column(name = "user_id", nullable = false, unique = true)
     val userId: Long,
 
-    @Column(name = "height_cm", nullable = false)
+    @Column(name = "height_cm", nullable = false, columnDefinition = "numeric(5,1)")
     var heightCm: Double,
 
-    @Column(name = "weight_kg", nullable = false)
+    @Column(name = "weight_kg", nullable = false, columnDefinition = "numeric(5,1)")
     var weightKg: Double,
 
     @Column(name = "birth_date", nullable = false)
@@ -32,16 +32,16 @@ class BodyProfile(
     @Column(nullable = false)
     var goal: String = "MAINTAIN",
 
-    @Column(name = "target_weight_kg")
+    @Column(name = "target_weight_kg", columnDefinition = "numeric(5,1)")
     var targetWeightKg: Double? = null,
 
-    @Column(name = "bmr_kcal")
+    @Column(name = "bmr_kcal", columnDefinition = "numeric(8,2)")
     var bmrKcal: Double? = null,
 
-    @Column(name = "tdee_kcal")
+    @Column(name = "tdee_kcal", columnDefinition = "numeric(8,2)")
     var tdeeKcal: Double? = null,
 
-    @Column(name = "recommended_calories")
+    @Column(name = "recommended_calories", columnDefinition = "numeric(8,2)")
     var recommendedCalories: Double? = null,
 
     @Column(name = "updated_at", nullable = false)

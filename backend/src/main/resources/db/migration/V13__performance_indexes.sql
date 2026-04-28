@@ -6,9 +6,6 @@ CREATE INDEX IF NOT EXISTS idx_meal_logs_user_date ON meal_logs(user_id, logged_
 -- meal_logs: analytics top-foods join
 CREATE INDEX IF NOT EXISTS idx_meal_logs_food_item ON meal_logs(food_item_id);
 
--- user_subscriptions: premium check (most frequent auth gate)
-CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_status ON user_subscriptions(user_id, status, expires_at);
-
 -- ai_scan_logs: rate-limit query (user + date)
 CREATE INDEX IF NOT EXISTS idx_ai_scan_logs_user_created ON ai_scan_logs(user_id, created_at DESC);
 

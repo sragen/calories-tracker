@@ -13,16 +13,16 @@ class DailyGoal(
     @Column(name = "user_id", nullable = false, unique = true)
     val userId: Long,
 
-    @Column(name = "target_calories", nullable = false)
+    @Column(name = "target_calories", nullable = false, columnDefinition = "numeric(8,2)")
     var targetCalories: Double,
 
-    @Column(name = "target_protein_g", nullable = false)
+    @Column(name = "target_protein_g", nullable = false, columnDefinition = "numeric(8,2)")
     var targetProteinG: Double = 0.0,
 
-    @Column(name = "target_carbs_g", nullable = false)
+    @Column(name = "target_carbs_g", nullable = false, columnDefinition = "numeric(8,2)")
     var targetCarbsG: Double = 0.0,
 
-    @Column(name = "target_fat_g", nullable = false)
+    @Column(name = "target_fat_g", nullable = false, columnDefinition = "numeric(8,2)")
     var targetFatG: Double = 0.0,
 
     @Column(name = "auto_calculated", nullable = false)

@@ -1,9 +1,9 @@
 package com.company.app.ui
 
 import androidx.compose.runtime.*
-import kotlinx.coroutines.flow.StateFlow
 import com.company.app.shared.data.repository.AuthRepository
 import com.company.app.shared.data.repository.BodyProfileRepository
+import com.company.app.shared.storage.GuestStorage
 import com.company.app.ui.aiscan.AiScanResultScreen
 import com.company.app.ui.aiscan.AiScanScreen
 import com.company.app.ui.aiscan.AiScanViewModel
@@ -29,6 +29,8 @@ import com.company.app.ui.subscription.PaywallScreen
 import com.company.app.ui.subscription.SubscriptionState
 import com.company.app.ui.subscription.SubscriptionStatusScreen
 import com.company.app.ui.subscription.SubscriptionViewModel
+import com.company.app.ui.welcome.WelcomeScreen
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -36,35 +38,53 @@ import org.koin.compose.koinInject
 fun App() {
     val authRepo: AuthRepository = koinInject()
     val bodyProfileRepo: BodyProfileRepository = koinInject()
+    val guestStorage: GuestStorage = koinInject()
     val scope = rememberCoroutineScope()
 
-    var currentScreen by remember { mutableStateOf<Screen>(Screen.Login) }
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.Welcome) }
+    var isGuestMode by remember { mutableStateOf(false) }
+    var guestScansRemaining by remember { mutableStateOf(GuestStorage.SCAN_LIMIT) }
     var pendingMealType by remember { mutableStateOf("SNACK") }
     var scannedBarcode by remember { mutableStateOf("") }
     var pendingAiImageBytes by remember { mutableStateOf<ByteArray?>(null) }
-    var isCheckingAuth by remember { mutableStateOf(true) }
 
+    // Observe guest scan counter
     LaunchedEffect(Unit) {
-        scope.launch {
-            val loggedIn = authRepo.isLoggedIn()
-            currentScreen = if (loggedIn) {
-                val hasProfile = bodyProfileRepo.hasProfile().getOrDefault(false)
-                if (hasProfile) Screen.Home else Screen.Onboarding
-            } else {
-                Screen.Login
-            }
-            isCheckingAuth = false
+        guestStorage.scansRemaining.collect { remaining ->
+            guestScansRemaining = remaining
         }
     }
 
-    if (isCheckingAuth) return
+    // Silently redirect if already logged in
+    LaunchedEffect(Unit) {
+        val loggedIn = authRepo.isLoggedIn()
+        if (loggedIn) {
+            val hasProfile = bodyProfileRepo.hasProfile().getOrDefault(false)
+            currentScreen = if (hasProfile) Screen.Home else Screen.Onboarding
+        }
+        // Not logged in → stay on Screen.Welcome (initial state)
+    }
 
     when (currentScreen) {
+        Screen.Welcome -> {
+            WelcomeScreen(
+                guestScansRemaining = guestScansRemaining,
+                onTryFree = {
+                    isGuestMode = true
+                    currentScreen = Screen.AiScan
+                },
+                onLogin = {
+                    isGuestMode = false
+                    currentScreen = Screen.Login
+                }
+            )
+        }
         Screen.Login -> {
             val viewModel: LoginViewModel = koinInject()
             LoginScreen(
                 viewModel = viewModel,
                 onLoginSuccess = {
+                    isGuestMode = false
                     scope.launch {
                         val hasProfile = bodyProfileRepo.hasProfile().getOrDefault(false)
                         currentScreen = if (hasProfile) Screen.Home else Screen.Onboarding
@@ -77,8 +97,13 @@ fun App() {
             val viewModel: RegisterViewModel = koinInject()
             RegisterScreen(
                 viewModel = viewModel,
-                onRegisterSuccess = { currentScreen = Screen.Onboarding },
-                onBack = { currentScreen = Screen.Login }
+                onRegisterSuccess = {
+                    isGuestMode = false
+                    currentScreen = Screen.Onboarding
+                },
+                onBack = {
+                    currentScreen = if (isGuestMode) Screen.Welcome else Screen.Login
+                }
             )
         }
         Screen.Onboarding -> {
@@ -92,7 +117,7 @@ fun App() {
             val viewModel: HomeViewModel = koinInject()
             HomeScreen(
                 viewModel = viewModel,
-                onLogout = { currentScreen = Screen.Login },
+                onLogout = { currentScreen = Screen.Welcome },
                 onAddFood = { mealType ->
                     pendingMealType = mealType
                     currentScreen = Screen.SearchFood
@@ -135,34 +160,63 @@ fun App() {
             )
         }
         Screen.AiScan -> {
-            val viewModel: AiScanViewModel = koinInject()
-            AiScanScreen(
-                onPhotoCaptured = { bytes ->
-                    pendingAiImageBytes = bytes
-                    viewModel.analyze(bytes)
-                    currentScreen = Screen.AiScanResult
-                },
-                onBack = { currentScreen = Screen.Home }
-            )
+            if (isGuestMode && guestScansRemaining <= 0) {
+                // Trial exhausted — show paywall before opening camera
+                currentScreen = Screen.Paywall
+            } else {
+                val viewModel: AiScanViewModel = koinInject()
+                AiScanScreen(
+                    onPhotoCaptured = { bytes ->
+                        pendingAiImageBytes = bytes
+                        if (isGuestMode) {
+                            scope.launch { guestStorage.decrementScan() }
+                        }
+                        viewModel.analyze(bytes)
+                        currentScreen = Screen.AiScanResult
+                    },
+                    onBack = {
+                        currentScreen = if (isGuestMode) Screen.Welcome else Screen.Home
+                    }
+                )
+            }
         }
         Screen.AiScanResult -> {
             val viewModel: AiScanViewModel = koinInject()
             AiScanResultScreen(
                 viewModel = viewModel,
                 mealType = pendingMealType,
+                isGuestMode = isGuestMode,
                 onConfirmed = { currentScreen = Screen.Home },
-                onBack = { currentScreen = Screen.Home }
+                onBack = {
+                    currentScreen = if (isGuestMode) Screen.Welcome else Screen.Home
+                },
+                onRegisterFromGuest = {
+                    isGuestMode = false
+                    currentScreen = Screen.Register
+                }
             )
         }
         Screen.Paywall -> {
             val viewModel: SubscriptionViewModel = koinInject()
             val state by viewModel.state.collectAsState()
             if (state is SubscriptionState.Entitled) {
+                isGuestMode = false
                 currentScreen = Screen.SubscriptionStatus
             } else {
                 PaywallScreen(
                     viewModel = viewModel,
-                    onEntitled = { currentScreen = Screen.SubscriptionStatus }
+                    isGuestMode = isGuestMode,
+                    onEntitled = {
+                        isGuestMode = false
+                        currentScreen = Screen.SubscriptionStatus
+                    },
+                    onRegister = {
+                        isGuestMode = false
+                        currentScreen = Screen.Register
+                    },
+                    onBack = {
+                        currentScreen = if (isGuestMode) Screen.Welcome else Screen.Home
+                    }
                 )
             }
         }
@@ -185,7 +239,7 @@ fun App() {
             val viewModel: ProfileViewModel = koinInject()
             ProfileScreen(
                 viewModel = viewModel,
-                onLogout = { currentScreen = Screen.Login }
+                onLogout = { currentScreen = Screen.Welcome }
             )
         }
         else -> {}

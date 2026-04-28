@@ -19,7 +19,7 @@ class FoodService(
     private val log = LoggerFactory.getLogger(javaClass)
 
     fun search(q: String?, categoryId: Long?, pageable: Pageable): Page<FoodItemResponse> =
-        foodItemRepository.search(q?.takeIf { it.isNotBlank() }, categoryId, pageable)
+        foodItemRepository.search(q?.takeIf { it.isNotBlank() } ?: "", categoryId, pageable)
             .map { it.toResponse() }
 
     fun findById(id: Long): FoodItemResponse =

@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/data-table"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import {
   DropdownMenu,
@@ -154,8 +155,8 @@ export default function FoodsPage() {
               <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href={`/foods/${food.id}`}>Edit</Link>
+              <DropdownMenuItem>
+                <Link href={`/foods/${food.id}`} className="w-full">Edit</Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => toggleVerify(food.id, food.isVerified)}>
                 {food.isVerified ? "Unverify" : "Verify"}
@@ -175,18 +176,14 @@ export default function FoodsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Food Database</h1>
         <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link href="/foods/import">
-              <Upload className="mr-2 h-4 w-4" />
-              Import CSV
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link href="/foods/create">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Food
-            </Link>
-          </Button>
+          <Link href="/foods/import" className={cn(buttonVariants({ variant: "outline" }))}>
+            <Upload className="mr-2 h-4 w-4" />
+            Import CSV
+          </Link>
+          <Link href="/foods/create" className={cn(buttonVariants())}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Food
+          </Link>
         </div>
       </div>
 

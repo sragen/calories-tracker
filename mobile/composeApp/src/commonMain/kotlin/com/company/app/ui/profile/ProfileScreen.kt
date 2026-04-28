@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.company.app.shared.data.model.EntitlementResponse
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,8 +68,8 @@ fun ProfileScreen(
                             }
                         }
 
-                        state.premiumStatus?.let { status ->
-                            SubscriptionCard(status)
+                        state.entitlement?.let { entitlement ->
+                            SubscriptionCard(entitlement)
                         }
 
                         ReminderSettingsCard()
@@ -98,22 +99,21 @@ private fun ProfileRow(label: String, value: String) {
 }
 
 @Composable
-private fun SubscriptionCard(status: com.company.app.shared.data.model.PremiumStatusResponse) {
+private fun SubscriptionCard(entitlement: EntitlementResponse) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("Subscription", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                val (label, color) = if (status.isPremium)
+                val (label, color) = if (entitlement.entitled)
                     "PREMIUM" to Color(0xFFFFB300)
                 else
                     "FREE" to MaterialTheme.colorScheme.onSurfaceVariant
                 Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = color)
             }
-            if (status.isPremium && status.subscription != null) {
-                val sub = status.subscription
-                sub.startedAt?.let { ProfileRow("Started", it.take(10)) }
-                sub.expiresAt?.let { ProfileRow("Expires", it.take(10)) }
-                ProfileRow("Plan", sub.plan.name)
+            if (entitlement.entitled) {
+                entitlement.status?.let { ProfileRow("Status", it) }
+                entitlement.expiresAt?.let { ProfileRow("Expires", it.take(10)) }
+                entitlement.source?.let { ProfileRow("Source", it) }
             } else {
                 Text(
                     "Upgrade to Premium untuk fitur AI Scan dan Analytics",

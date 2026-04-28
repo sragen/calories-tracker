@@ -6,7 +6,7 @@ import com.company.app.modules.food.FoodItemRepository
 import com.company.app.modules.meal.MealLog
 import com.company.app.modules.meal.MealLogRepository
 import com.company.app.modules.storage.MinioService
-import com.company.app.modules.subscription.SubscriptionService
+import com.company.app.modules.subscription.service.EntitlementService
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -22,14 +22,14 @@ private const val FREE_DAILY_SCAN_LIMIT = 20
 class AiScanService(
     private val geminiService: GeminiService,
     private val minioService: MinioService,
-    private val subscriptionService: SubscriptionService,
+    private val entitlementService: EntitlementService,
     private val scanLogRepo: AiScanLogRepository,
     private val foodItemRepo: FoodItemRepository,
     private val mealLogRepo: MealLogRepository
 ) {
 
     fun analyze(userId: Long, imageFile: MultipartFile): AiScanResponse {
-        if (!subscriptionService.isPremium(userId)) {
+        if (!entitlementService.checkEntitlement(userId).entitled) {
             throw AppException.forbidden("Fitur AI Scan memerlukan langganan Premium")
         }
 
@@ -83,7 +83,7 @@ class AiScanService(
 
     @Transactional
     fun confirm(userId: Long, request: AiScanConfirmRequest): Int {
-        if (!subscriptionService.isPremium(userId)) {
+        if (!entitlementService.checkEntitlement(userId).entitled) {
             throw AppException.forbidden("Fitur AI Scan memerlukan langganan Premium")
         }
 
