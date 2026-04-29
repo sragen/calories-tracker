@@ -90,7 +90,7 @@ export default function UsersPage() {
     try {
       await api.patch(`/api/admin/users/${id}/status`, { status })
       toast.success(`User ${status.toLowerCase()}`)
-      loadUsers(page)
+      loadUsers(page, query)
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to update")
     }
