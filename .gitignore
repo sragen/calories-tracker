@@ -42,3 +42,4 @@ mobile/.kotlin/
 mobile/androidApp/build/
 mobile/composeApp/build/
 mobile/shared/build/
+.claude
