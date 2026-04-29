@@ -5,6 +5,7 @@ import com.company.app.shared.data.repository.AuthRepository
 import com.company.app.shared.data.repository.BodyProfileRepository
 import com.company.app.shared.storage.GuestStorage
 import com.company.app.ui.aiscan.AiScanResultScreen
+import com.company.app.ui.theme.CalSnapTheme
 import com.company.app.ui.aiscan.AiScanScreen
 import com.company.app.ui.aiscan.AiScanViewModel
 import com.company.app.ui.analytics.AnalyticsScreen
@@ -36,6 +37,13 @@ import org.koin.compose.koinInject
 
 @Composable
 fun App() {
+    CalSnapTheme {
+    AppContent()
+    }
+}
+
+@Composable
+private fun AppContent() {
     val authRepo: AuthRepository = koinInject()
     val bodyProfileRepo: BodyProfileRepository = koinInject()
     val guestStorage: GuestStorage = koinInject()
