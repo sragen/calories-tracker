@@ -10,15 +10,15 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestTemplate
-import java.io.FileInputStream
+import java.io.ByteArrayInputStream
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 
 @Component
 class GooglePlayReceiptClient(
-    @Value("\${app.google-play.package-name}") private val packageName: String,
-    @Value("\${app.google-play.service-account-key-path}") private val keyPath: String,
+    @Value("\${app.subscription.google-play.package-name:\${GOOGLE_PLAY_PACKAGE_NAME:com.company.app}}") private val packageName: String,
+    @Value("\${app.subscription.google-play.service-account-json:}") private val serviceAccountJson: String,
     private val objectMapper: ObjectMapper
 ) {
     private val restTemplate = RestTemplate()
@@ -88,8 +88,9 @@ class GooglePlayReceiptClient(
     }
 
     private fun getAccessToken(): String {
+        if (serviceAccountJson.isBlank()) throw AppException.badRequest("Google Play service account not configured")
         val credentials = ServiceAccountCredentials
-            .fromStream(FileInputStream(keyPath))
+            .fromStream(ByteArrayInputStream(serviceAccountJson.toByteArray()))
             .createScoped("https://www.googleapis.com/auth/androidpublisher")
         credentials.refreshIfExpired()
         return credentials.accessToken.tokenValue
