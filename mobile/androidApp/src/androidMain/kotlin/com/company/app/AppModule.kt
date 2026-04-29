@@ -31,7 +31,7 @@ import kotlinx.coroutines.runBlocking
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
-private const val BASE_URL = "http://10.0.2.2:8080"
+private const val BASE_URL = "https://api.adikur.com"
 private const val PLAN_ID = 1L
 private const val PRODUCT_ID = "premium_monthly"
 
