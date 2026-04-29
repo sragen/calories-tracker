@@ -2,6 +2,13 @@
 
 Kotlin Multiplatform (KMM) + Compose Multiplatform. Satu codebase untuk Android dan iOS.
 
+## UI Design Docs
+
+| Document | Description |
+|---|---|
+| [MOBILE_UI_DESIGN.md](./MOBILE_UI_DESIGN.md) | Full design spec — tokens, components, screens, animations, haptics |
+| [MOBILE_UI_PHASES.md](./MOBILE_UI_PHASES.md) | Phased implementation plan — Phase 0–7 with BE gaps and acceptance criteria |
+
 ## Struktur Folder
 
 ```
