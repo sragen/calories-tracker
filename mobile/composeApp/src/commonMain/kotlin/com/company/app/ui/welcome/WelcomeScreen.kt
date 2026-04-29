@@ -32,7 +32,7 @@ fun WelcomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CalSnapColors.Surface),
+            .background(CalSnapColors.Background),
     ) {
         Column(
             modifier = Modifier

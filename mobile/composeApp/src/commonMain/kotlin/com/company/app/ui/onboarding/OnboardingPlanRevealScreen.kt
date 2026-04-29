@@ -27,13 +27,13 @@ fun OnboardingPlanRevealScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(CalSnapColors.Background)
+            .background(CalSnapColors.Surface)
             .padding(horizontal = CalSnapSpacing.screenPad),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(CalSnapSpacing.xxl))
 
-        StepIndicator(current = 4, total = 4)
+        StepIndicator(current = 4, total = 4, showBack = true, onBack = onBack)
 
         Spacer(Modifier.height(CalSnapSpacing.xl))
 

@@ -3,16 +3,20 @@ package com.company.app.ui.onboarding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.company.app.ui.components.CalSnapIcon
 import com.company.app.ui.components.CalSnapPrimaryButton
 import com.company.app.ui.theme.*
 
@@ -33,13 +37,13 @@ fun OnboardingGoalScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(CalSnapColors.Background)
+            .background(CalSnapColors.Surface)
             .padding(horizontal = CalSnapSpacing.screenPad),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(CalSnapSpacing.xxl))
 
-        StepIndicator(current = 1, total = 4)
+        StepIndicator(current = 1, total = 4, showBack = false)
 
         Spacer(Modifier.height(CalSnapSpacing.lg))
 
@@ -61,7 +65,7 @@ fun OnboardingGoalScreen(
 
         Spacer(Modifier.height(CalSnapSpacing.xl))
 
-        Column(verticalArrangement = Arrangement.spacedBy(CalSnapSpacing.md)) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             GOAL_OPTIONS.forEach { option ->
                 GoalCard(
                     option = option,
@@ -69,6 +73,26 @@ fun OnboardingGoalScreen(
                     onClick = { onGoalSelected(option.key) },
                 )
             }
+        }
+
+        Spacer(Modifier.height(CalSnapSpacing.md))
+
+        // Tip callout
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(CalSnapRadius.md))
+                .background(CalSnapColors.RedSoft)
+                .padding(horizontal = CalSnapSpacing.md, vertical = CalSnapSpacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(CalSnapSpacing.sm),
+        ) {
+            Text("✦", fontSize = 14.sp, color = CalSnapColors.Red)
+            Text(
+                text = "Tip — most people lose 0.5–1 lb / week comfortably.",
+                style = CalSnapType.Body,
+                color = CalSnapColors.Red,
+            )
         }
 
         Spacer(Modifier.weight(1f))
@@ -105,12 +129,12 @@ private fun GoalCard(
     ) {
         Box(
             modifier = Modifier
-                .size(52.dp)
+                .size(48.dp)
                 .clip(RoundedCornerShape(CalSnapRadius.md))
                 .background(CalSnapColors.SurfaceAlt),
             contentAlignment = Alignment.Center,
         ) {
-            Text(text = option.emoji, fontSize = 26.sp)
+            Text(text = option.emoji, fontSize = 24.sp)
         }
 
         Column(modifier = Modifier.weight(1f)) {
@@ -126,38 +150,82 @@ private fun GoalCard(
             )
         }
 
-        if (isSelected) {
-            Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .clip(RoundedCornerShape(CalSnapRadius.pill))
-                    .background(CalSnapColors.Ink),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("✓", color = CalSnapColors.Background, fontSize = 12.sp)
+        // Radio circle: filled Ink when selected, outlined Border when not
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(if (isSelected) CalSnapColors.Ink else CalSnapColors.Background)
+                .border(
+                    width = 2.dp,
+                    color = if (isSelected) CalSnapColors.Ink else CalSnapColors.Border,
+                    shape = CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(CalSnapColors.Background),
+                )
             }
         }
     }
 }
 
 @Composable
-internal fun StepIndicator(current: Int, total: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        repeat(total) { idx ->
-            val isActive = idx + 1 == current
-            val isDone = idx + 1 < current
+internal fun StepIndicator(
+    current: Int,
+    total: Int,
+    showBack: Boolean = true,
+    onBack: (() -> Unit)? = null,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(CalSnapSpacing.sm),
+    ) {
+        if (showBack && onBack != null) {
             Box(
                 modifier = Modifier
-                    .height(4.dp)
-                    .then(if (isActive) Modifier.width(24.dp) else Modifier.size(4.dp))
-                    .clip(RoundedCornerShape(CalSnapRadius.pill))
-                    .background(
-                        when {
-                            isActive || isDone -> CalSnapColors.Ink
-                            else -> CalSnapColors.Divider
-                        }
-                    )
-            )
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(CalSnapColors.Ink.copy(alpha = 0.05f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onBack,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                CalSnapIcon(name = "chev-l", size = 18.dp, color = CalSnapColors.Ink)
+            }
+        } else if (showBack) {
+            Spacer(Modifier.size(36.dp))
         }
+
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            repeat(total) { idx ->
+                val isFilled = idx + 1 <= current
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(CalSnapRadius.pill))
+                        .background(
+                            if (isFilled) CalSnapColors.Ink
+                            else CalSnapColors.Ink.copy(alpha = 0.08f)
+                        )
+                )
+            }
+        }
+
+        // Spacer to balance left side
+        if (showBack) Spacer(Modifier.size(36.dp))
     }
 }

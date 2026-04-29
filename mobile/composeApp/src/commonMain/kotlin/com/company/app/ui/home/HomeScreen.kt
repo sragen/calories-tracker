@@ -43,7 +43,7 @@ fun HomeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CalSnapColors.Surface),
+            .background(CalSnapColors.Background),
     ) {
         when {
             state.isLoading -> {

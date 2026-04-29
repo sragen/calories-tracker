@@ -42,7 +42,7 @@ fun OnboardingBodyScreen(
     ) {
         Spacer(Modifier.height(CalSnapSpacing.xxl))
 
-        StepIndicator(current = 2, total = 4)
+        StepIndicator(current = 2, total = 4, showBack = true, onBack = onBack)
 
         Spacer(Modifier.height(CalSnapSpacing.lg))
 
