@@ -1,148 +1,245 @@
 package com.company.app.ui.analytics
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.company.app.shared.data.model.DailyRangeSummary
+import com.company.app.ui.components.CalSnapBrandButton
+import com.company.app.ui.components.CalSnapIcon
+import com.company.app.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
     viewModel: AnalyticsViewModel,
     onUpgrade: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     val state = viewModel.state
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Analitik") },
-                navigationIcon = { IconButton(onClick = onBack) { Text("←") } },
-                actions = { IconButton(onClick = viewModel::refresh) { Text("↺") } }
-            )
-        }
-    ) { padding ->
-        if (state.isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CalSnapColors.Surface),
+    ) {
+        when {
+            state.isLoading -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = CalSnapColors.Red,
+                )
             }
-            return@Scaffold
-        }
-
-        if (!state.isPremium) {
-            PremiumGate(onUpgrade = onUpgrade)
-            return@Scaffold
-        }
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                Text("7 Hari Terakhir", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            !state.isPremium -> {
+                PremiumGate(onUpgrade = onUpgrade)
             }
+            else -> {
+                LazyColumn(
+                    contentPadding = PaddingValues(bottom = CalSnapSpacing.xxl),
+                ) {
+                    item { AnalyticsHeader(onBack = onBack, onRefresh = viewModel::refresh) }
 
-            item {
-                WeeklyCalorieChart(data = state.weeklyData)
-            }
+                    item {
+                        Spacer(Modifier.height(CalSnapSpacing.sm))
+                        WeeklyCalorieChart(
+                            data = state.weeklyData,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = CalSnapSpacing.screenPad),
+                        )
+                    }
 
-            item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text("Rata-rata Harian", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                        Spacer(Modifier.height(12.dp))
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-                            AvgMacroItem("Kalori", state.avgCalories.toInt().toString(), "kcal",
-                                MaterialTheme.colorScheme.primary)
-                            AvgMacroItem("Protein", state.avgProtein.toInt().toString(), "g",
-                                Color(0xFF4CAF50))
-                            AvgMacroItem("Karbo", state.avgCarbs.toInt().toString(), "g",
-                                Color(0xFFFF9800))
-                            AvgMacroItem("Lemak", state.avgFat.toInt().toString(), "g",
-                                Color(0xFFF44336))
+                    item {
+                        Spacer(Modifier.height(CalSnapSpacing.md))
+                        AverageMacrosCard(
+                            calories = state.avgCalories,
+                            protein = state.avgProtein,
+                            carbs = state.avgCarbs,
+                            fat = state.avgFat,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = CalSnapSpacing.screenPad),
+                        )
+                    }
+
+                    if (state.weeklyData.isNotEmpty()) {
+                        item {
+                            Spacer(Modifier.height(CalSnapSpacing.md))
+                            MacroBreakdownBars(
+                                data = state.weeklyData,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = CalSnapSpacing.screenPad),
+                            )
+                        }
+                    }
+
+                    state.error?.let {
+                        item {
+                            Spacer(Modifier.height(CalSnapSpacing.sm))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = CalSnapSpacing.screenPad)
+                                    .clip(RoundedCornerShape(CalSnapRadius.md))
+                                    .background(CalSnapColors.RedSoft)
+                                    .padding(CalSnapSpacing.md),
+                            ) {
+                                Text(it, style = CalSnapType.Body, color = CalSnapColors.Red)
+                            }
                         }
                     }
                 }
             }
-
-            if (state.error != null) {
-                item {
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
-                        Text(state.error, Modifier.padding(12.dp), color = MaterialTheme.colorScheme.onErrorContainer)
-                    }
-                }
-            }
         }
     }
 }
 
 @Composable
-private fun WeeklyCalorieChart(data: List<DailyRangeSummary>) {
-    if (data.isEmpty()) {
-        Card(Modifier.fillMaxWidth()) {
-            Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                Text("Belum ada data log makanan", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+private fun AnalyticsHeader(onBack: () -> Unit, onRefresh: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = CalSnapSpacing.screenPad)
+            .padding(top = CalSnapSpacing.lg, bottom = CalSnapSpacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(CalSnapSpacing.sm),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(CalSnapColors.SurfaceAlt)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onBack,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            CalSnapIcon(name = "chev-l", size = 18.dp, color = CalSnapColors.Ink)
         }
-        return
+
+        Text(
+            text = "Analytics",
+            style = CalSnapType.HeadlineMedium,
+            color = CalSnapColors.Ink,
+            modifier = Modifier.weight(1f),
+        )
+
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(CalSnapColors.SurfaceAlt)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onRefresh,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            CalSnapIcon(name = "arrow-r", size = 18.dp, color = CalSnapColors.Ink)
+        }
     }
+}
 
-    val barColor = MaterialTheme.colorScheme.primary
-    val gridColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-    val maxCalories = data.maxOf { it.totalCalories }.coerceAtLeast(100.0)
+@Composable
+private fun WeeklyCalorieChart(
+    data: List<DailyRangeSummary>,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(CalSnapRadius.card))
+            .background(CalSnapColors.Background)
+            .padding(CalSnapSpacing.cardPad),
+    ) {
+        Text("CALORIES — LAST 7 DAYS", style = CalSnapType.Label, color = CalSnapColors.Muted)
+        Spacer(Modifier.height(CalSnapSpacing.md))
 
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
-            Text("Kalori per Hari", style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(8.dp))
-            Canvas(
-                modifier = Modifier.fillMaxWidth().height(160.dp)
+        if (data.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                val chartWidth = size.width
-                val chartHeight = size.height - 24.dp.toPx()
-                val barWidth = (chartWidth / data.size) * 0.6f
-                val gap = (chartWidth / data.size) * 0.4f
+                Text(
+                    text = "No data logged yet",
+                    style = CalSnapType.Body,
+                    color = CalSnapColors.Hint,
+                )
+            }
+        } else {
+            val maxCal = data.maxOf { it.totalCalories }.coerceAtLeast(500.0)
+            val inkColor = CalSnapColors.Ink
+            val dividerColor = CalSnapColors.Divider
 
-                // Horizontal grid lines
-                for (i in 0..3) {
-                    val y = chartHeight * (1f - i / 3f)
-                    drawLine(gridColor, Offset(0f, y), Offset(chartWidth, y), strokeWidth = 1f)
+            Canvas(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp),
+            ) {
+                val chartH = size.height - 24.dp.toPx()
+                val slotW = size.width / data.size
+                val barW = slotW * 0.5f
+                val gap = (slotW - barW) / 2f
+
+                // 3 horizontal grid lines
+                repeat(3) { i ->
+                    val y = chartH * (1f - (i + 1) / 3f)
+                    drawLine(
+                        color = dividerColor,
+                        start = Offset(0f, y),
+                        end = Offset(size.width, y),
+                        strokeWidth = 1f,
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f)),
+                    )
                 }
 
                 data.forEachIndexed { idx, day ->
-                    val barHeight = (day.totalCalories / maxCalories * chartHeight).toFloat()
-                    val x = idx * (chartWidth / data.size) + gap / 2
-                    val y = chartHeight - barHeight
+                    val barH = (day.totalCalories / maxCal * chartH).toFloat().coerceAtLeast(4f)
+                    val x = idx * slotW + gap
+                    val y = chartH - barH
                     drawRoundRect(
-                        color = barColor,
+                        color = inkColor,
                         topLeft = Offset(x, y),
-                        size = Size(barWidth, barHeight),
-                        cornerRadius = CornerRadius(4.dp.toPx())
+                        size = Size(barW, barH),
+                        cornerRadius = CornerRadius(4.dp.toPx()),
                     )
                 }
             }
 
-            // Day labels
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround,
+            ) {
                 data.forEach { day ->
-                    val label = day.date.takeLast(5)  // MM-DD
-                    Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
+                    Text(
+                        text = day.date.takeLast(5),
+                        style = CalSnapType.Label,
+                        color = CalSnapColors.Muted,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
         }
@@ -150,29 +247,177 @@ private fun WeeklyCalorieChart(data: List<DailyRangeSummary>) {
 }
 
 @Composable
-private fun AvgMacroItem(label: String, value: String, unit: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = color)
-        Text(unit, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun AverageMacrosCard(
+    calories: Double,
+    protein: Double,
+    carbs: Double,
+    fat: Double,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(CalSnapRadius.card))
+            .background(CalSnapColors.Background)
+            .padding(CalSnapSpacing.cardPad),
+    ) {
+        Text("DAILY AVERAGE", style = CalSnapType.Label, color = CalSnapColors.Muted)
+        Spacer(Modifier.height(CalSnapSpacing.md))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            AvgCell(value = "${calories.toInt()}", unit = "kcal", label = "Calories", color = CalSnapColors.Ink)
+            CellDivider()
+            AvgCell(value = "${protein.toInt()}g", unit = "", label = "Protein", color = CalSnapColors.Protein)
+            CellDivider()
+            AvgCell(value = "${carbs.toInt()}g", unit = "", label = "Carbs", color = CalSnapColors.Carb)
+            CellDivider()
+            AvgCell(value = "${fat.toInt()}g", unit = "", label = "Fat", color = CalSnapColors.Fat)
+        }
     }
 }
 
 @Composable
-private fun PremiumGate(onUpgrade: () -> Unit) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(32.dp)) {
-            Text("★", fontSize = 48.sp)
-            Text("Fitur Premium", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(
-                "Analitik mingguan dan grafik kalori tersedia untuk pengguna Premium.",
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+private fun MacroBreakdownBars(
+    data: List<DailyRangeSummary>,
+    modifier: Modifier = Modifier,
+) {
+    val avgProtein = if (data.isEmpty()) 0.0 else data.sumOf { it.totalProteinG } / data.size
+    val avgCarbs = if (data.isEmpty()) 0.0 else data.sumOf { it.totalCarbsG } / data.size
+    val avgFat = if (data.isEmpty()) 0.0 else data.sumOf { it.totalFatG } / data.size
+    val total = (avgProtein + avgCarbs + avgFat).coerceAtLeast(1.0)
+
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(CalSnapRadius.card))
+            .background(CalSnapColors.Background)
+            .padding(CalSnapSpacing.cardPad),
+        verticalArrangement = Arrangement.spacedBy(CalSnapSpacing.md),
+    ) {
+        Text("MACRO SPLIT", style = CalSnapType.Label, color = CalSnapColors.Muted)
+
+        MacroSplitBar("Protein", avgProtein, total, CalSnapColors.Protein)
+        MacroSplitBar("Carbs", avgCarbs, total, CalSnapColors.Carb)
+        MacroSplitBar("Fat", avgFat, total, CalSnapColors.Fat)
+    }
+}
+
+@Composable
+private fun MacroSplitBar(
+    label: String,
+    value: Double,
+    total: Double,
+    color: androidx.compose.ui.graphics.Color,
+) {
+    val pct = ((value / total) * 100).toInt()
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(CalSnapSpacing.sm),
+    ) {
+        Text(
+            text = label,
+            style = CalSnapType.BodySmall,
+            color = CalSnapColors.Muted,
+            modifier = Modifier.width(52.dp),
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(8.dp)
+                .clip(RoundedCornerShape(CalSnapRadius.pill))
+                .background(CalSnapColors.Divider),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth((value / total).toFloat().coerceIn(0f, 1f))
+                    .clip(RoundedCornerShape(CalSnapRadius.pill))
+                    .background(color),
             )
-            Button(onClick = onUpgrade, modifier = Modifier.fillMaxWidth()) {
-                Text("Upgrade ke Premium")
+        }
+        Text(
+            text = "$pct%",
+            style = CalSnapType.BodySmall,
+            color = CalSnapColors.Muted,
+            modifier = Modifier.width(32.dp),
+            textAlign = TextAlign.End,
+        )
+    }
+}
+
+@Composable
+private fun AvgCell(
+    value: String,
+    unit: String,
+    label: String,
+    color: androidx.compose.ui.graphics.Color,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = value,
+            style = CalSnapType.HeadlineMedium,
+            color = color,
+        )
+        if (unit.isNotEmpty()) {
+            Text(unit, style = CalSnapType.Label, color = CalSnapColors.Muted)
+        }
+        Text(label, style = CalSnapType.BodySmall, color = CalSnapColors.Muted)
+    }
+}
+
+@Composable
+private fun CellDivider() {
+    Box(
+        modifier = Modifier
+            .width(1.dp)
+            .height(40.dp)
+            .background(CalSnapColors.Divider),
+    )
+}
+
+@Composable
+private fun PremiumGate(onUpgrade: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(CalSnapSpacing.xl),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(CalSnapSpacing.md),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(CircleShape)
+                    .background(CalSnapColors.CarbBg),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("★", fontSize = 32.sp)
             }
+
+            Text(
+                text = "Analytics is Premium",
+                style = CalSnapType.HeadlineLarge,
+                color = CalSnapColors.Ink,
+                textAlign = TextAlign.Center,
+            )
+
+            Text(
+                text = "Unlock weekly calorie charts, macro splits,\nand trend tracking.",
+                style = CalSnapType.Body,
+                color = CalSnapColors.Muted,
+                textAlign = TextAlign.Center,
+            )
+
+            Spacer(Modifier.height(CalSnapSpacing.sm))
+
+            CalSnapBrandButton(
+                text = "Upgrade to Premium",
+                onClick = onUpgrade,
+            )
         }
     }
 }

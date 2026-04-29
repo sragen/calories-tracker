@@ -1,25 +1,35 @@
 package com.company.app.ui.register
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.company.app.ui.components.CalSnapIcon
+import com.company.app.ui.components.CalSnapPrimaryButton
+import com.company.app.ui.components.CalSnapTextButton
+import com.company.app.ui.login.AuthField
+import com.company.app.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     viewModel: RegisterViewModel,
     onRegisterSuccess: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
     var name by remember { mutableStateOf("") }
@@ -31,104 +41,121 @@ fun RegisterScreen(
         if (state.isSuccess) onRegisterSuccess()
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Create Account") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { padding ->
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CalSnapColors.Background),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 24.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(24.dp))
-
-            Text(
-                text = "Start your journey",
-                style = MaterialTheme.typography.headlineSmall
-            )
-            Text(
-                text = "Track calories and reach your goals",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(Modifier.height(32.dp))
-
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Full Name") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            OutlinedTextField(
-                value = confirmPassword,
-                onValueChange = { confirmPassword = it },
-                label = { Text("Confirm Password") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            state.error?.let {
-                Spacer(Modifier.height(8.dp))
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            Button(
-                onClick = { viewModel.register(name, email, password, confirmPassword) },
-                enabled = !state.isLoading,
-                modifier = Modifier.fillMaxWidth()
+            // Back button row
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = CalSnapSpacing.screenPad)
+                    .padding(top = CalSnapSpacing.lg),
             ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
-                } else {
-                    Text("Create Account")
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(CalSnapColors.SurfaceAlt)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onBack,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CalSnapIcon(name = "chev-l", size = 18.dp, color = CalSnapColors.Ink)
                 }
             }
 
-            Spacer(Modifier.height(32.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = CalSnapSpacing.screenPad)
+                    .padding(top = CalSnapSpacing.lg),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(CalSnapSpacing.sm),
+            ) {
+                Text(
+                    text = "Create account",
+                    style = CalSnapType.HeadlineLarge,
+                    color = CalSnapColors.Ink,
+                )
+
+                Text(
+                    text = "Start tracking your nutrition today",
+                    style = CalSnapType.Body,
+                    color = CalSnapColors.Muted,
+                )
+
+                Spacer(Modifier.height(CalSnapSpacing.md))
+
+                AuthField(
+                    value = name,
+                    onValueChange = { name = it },
+                    placeholder = "Full name",
+                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+                )
+
+                AuthField(
+                    value = email,
+                    onValueChange = { email = it },
+                    placeholder = "Email",
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                )
+
+                AuthField(
+                    value = password,
+                    onValueChange = { password = it },
+                    placeholder = "Password",
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                )
+
+                AuthField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    placeholder = "Confirm password",
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                )
+
+                state.error?.let {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(CalSnapRadius.md))
+                            .background(CalSnapColors.RedSoft)
+                            .padding(CalSnapSpacing.md),
+                    ) {
+                        Text(it, style = CalSnapType.BodySmall, color = CalSnapColors.Red)
+                    }
+                }
+
+                Spacer(Modifier.height(CalSnapSpacing.sm))
+
+                if (state.isLoading) {
+                    CircularProgressIndicator(color = CalSnapColors.Red, modifier = Modifier.size(28.dp))
+                } else {
+                    CalSnapPrimaryButton(
+                        text = "Create Account",
+                        onClick = { viewModel.register(name, email, password, confirmPassword) },
+                        enabled = name.isNotBlank() && email.isNotBlank() && password.isNotBlank(),
+                    )
+                }
+
+                CalSnapTextButton(
+                    text = "Already have an account? Sign in",
+                    onClick = onBack,
+                )
+
+                Spacer(Modifier.height(CalSnapSpacing.xl))
+            }
         }
     }
 }

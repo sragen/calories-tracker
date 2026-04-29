@@ -2,211 +2,140 @@ package com.company.app.ui.welcome
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-private val Black = Color(0xFF0A0A0A)
+import com.company.app.ui.components.CalSnapPrimaryButton
+import com.company.app.ui.components.CalSnapTextButton
+import com.company.app.ui.theme.*
 
 @Composable
 fun WelcomeScreen(
     guestScansRemaining: Int,
     onTryFree: () -> Unit,
     onLogin: () -> Unit,
-    onRestore: () -> Unit = {}
+    onRestore: () -> Unit = {},
 ) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = Color.White
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CalSnapColors.Surface),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = CalSnapSpacing.screenPad),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(Modifier.height(56.dp))
 
-            // App name
             Text(
-                text = "CalSnap",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Black.copy(alpha = 0.5f),
-                letterSpacing = 1.sp
+                text = "CALSNAP",
+                style = CalSnapType.Label.copy(letterSpacing = 2.sp),
+                color = CalSnapColors.Muted,
             )
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(CalSnapSpacing.xxl))
 
-            // Headline
+            FoodIllustration()
+
+            Spacer(Modifier.height(CalSnapSpacing.xl))
+
             Text(
-                text = "We want you to\ntry CalSnap for free.",
-                fontSize = 30.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = Black,
+                text = buildAnnotatedString {
+                    append("Snap your food.\n")
+                    withStyle(SpanStyle(color = CalSnapColors.Red)) {
+                        append("Track your goals.")
+                    }
+                },
+                style = CalSnapType.TitleLarge,
+                color = CalSnapColors.Ink,
                 textAlign = TextAlign.Center,
-                lineHeight = 36.sp
             )
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(CalSnapSpacing.sm))
 
-            // Phone mockup with scan UI inside
-            PhoneMockup()
-
-            Spacer(Modifier.height(28.dp))
-
-            // "No Credit Card" badge
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text("✓", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Black)
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text = "No Credit Card Required",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Black
-                )
-            }
-
-            Spacer(Modifier.height(28.dp))
-
-            // Primary CTA
-            Button(
-                onClick = onTryFree,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Black,
-                    contentColor = Color.White
-                )
-            ) {
-                Text(
-                    text = "Try $guestScansRemaining Free AI Scans",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            Spacer(Modifier.height(14.dp))
-
-            // Login link
-            TextButton(onClick = onLogin) {
-                Text(
-                    text = "Already have an account? Login",
-                    color = Black.copy(alpha = 0.55f),
-                    fontSize = 14.sp
-                )
-            }
+            Text(
+                text = "AI-powered nutrition tracking.\nNo calorie counting needed.",
+                style = CalSnapType.Body,
+                color = CalSnapColors.Muted,
+                textAlign = TextAlign.Center,
+            )
 
             Spacer(Modifier.weight(1f))
 
-            // Footer
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "Just Rp 499.000 / year (Rp 41.583/mo)",
-                    fontSize = 13.sp,
-                    color = Black.copy(alpha = 0.4f)
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    listOf("Terms", "Privacy", "Restore").forEach { label ->
-                        TextButton(
-                            onClick = { if (label == "Restore") onRestore() },
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            Text(label, fontSize = 12.sp, color = Black.copy(alpha = 0.4f))
-                        }
+            CalSnapPrimaryButton(
+                text = "Get Started Free",
+                onClick = onTryFree,
+            )
+
+            Spacer(Modifier.height(CalSnapSpacing.xs))
+
+            CalSnapTextButton(
+                text = "Already have an account? Sign In",
+                onClick = onLogin,
+            )
+
+            Spacer(Modifier.height(CalSnapSpacing.md))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                listOf("Terms", "Privacy", "Restore").forEach { label ->
+                    TextButton(
+                        onClick = { if (label == "Restore") onRestore() },
+                        contentPadding = PaddingValues(0.dp),
+                    ) {
+                        Text(
+                            text = label,
+                            style = CalSnapType.BodySmall,
+                            color = CalSnapColors.Hint,
+                        )
                     }
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(CalSnapSpacing.lg))
         }
     }
 }
 
 @Composable
-private fun PhoneMockup() {
-    // Outer phone shell
+private fun FoodIllustration() {
     Box(
-        modifier = Modifier
-            .width(200.dp)
-            .height(260.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .background(Color(0xFF1A1A1A))
-            .border(3.dp, Color(0xFF333333), RoundedCornerShape(28.dp)),
-        contentAlignment = Alignment.Center
+        modifier = Modifier.size(190.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        // Screen content (camera viewfinder simulation)
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(6.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFF2C2C2E)),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                // Scan frame corners
-                ScanFrame()
-
-                Spacer(Modifier.height(12.dp))
-
-                // Food emoji placeholder
-                Text("🍽️", fontSize = 36.sp)
-            }
-
-            // Top notch
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 8.dp)
-                    .width(40.dp)
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(Color(0xFF1A1A1A))
-            )
+                .size(190.dp)
+                .clip(CircleShape)
+                .background(CalSnapColors.SurfaceAlt),
+        )
+        Box(
+            modifier = Modifier
+                .size(148.dp)
+                .clip(CircleShape)
+                .background(Color.White),
+        )
+        Canvas(modifier = Modifier.size(118.dp)) {
+            val cx = size.width / 2
+            val cy = size.height / 2
+            drawCircle(Color(0xFF7BC67E), radius = 46f, center = Offset(cx, cy))
+            drawCircle(Color(0xFFE63946), radius = 20f, center = Offset(cx - 18f, cy - 10f))
+            drawCircle(Color(0xFFF4A23A), radius = 15f, center = Offset(cx + 18f, cy + 12f))
+            drawCircle(Color(0xFF5A8DEF), radius = 11f, center = Offset(cx + 10f, cy - 22f))
         }
-    }
-}
-
-@Composable
-private fun ScanFrame() {
-    Canvas(modifier = Modifier.size(100.dp)) {
-        val corner = 22.dp.toPx()
-        val stroke = 2.5.dp.toPx()
-        val w = size.width
-        val h = size.height
-
-        // Top-left
-        drawLine(Color.White, Offset(0f, 0f), Offset(corner, 0f), stroke)
-        drawLine(Color.White, Offset(0f, 0f), Offset(0f, corner), stroke)
-        // Top-right
-        drawLine(Color.White, Offset(w, 0f), Offset(w - corner, 0f), stroke)
-        drawLine(Color.White, Offset(w, 0f), Offset(w, corner), stroke)
-        // Bottom-left
-        drawLine(Color.White, Offset(0f, h), Offset(corner, h), stroke)
-        drawLine(Color.White, Offset(0f, h), Offset(0f, h - corner), stroke)
-        // Bottom-right
-        drawLine(Color.White, Offset(w, h), Offset(w - corner, h), stroke)
-        drawLine(Color.White, Offset(w, h), Offset(w, h - corner), stroke)
     }
 }

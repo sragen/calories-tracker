@@ -1,5 +1,7 @@
 package com.company.app.ui
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
 import com.company.app.shared.data.repository.AuthRepository
 import com.company.app.shared.data.repository.BodyProfileRepository
@@ -73,7 +75,17 @@ private fun AppContent() {
         // Not logged in → stay on Screen.Welcome (initial state)
     }
 
-    when (currentScreen) {
+    // A12 screen-entry stagger: fade + 20dp upward slide, 280ms
+    AnimatedContent(
+        targetState = currentScreen,
+        transitionSpec = {
+            (fadeIn(tween(280)) + slideInVertically(tween(280)) { (it * 0.06f).toInt() })
+                .togetherWith(fadeOut(tween(180)))
+        },
+        label = "screenTransition",
+    ) { screen ->
+
+    when (screen) {
         Screen.Welcome -> {
             WelcomeScreen(
                 guestScansRemaining = guestScansRemaining,
@@ -252,4 +264,5 @@ private fun AppContent() {
         }
         else -> {}
     }
+    } // end AnimatedContent
 }

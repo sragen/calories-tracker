@@ -2,21 +2,30 @@ package com.company.app.ui.subscription
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.company.app.ui.components.CalSnapBrandButton
+import com.company.app.ui.components.CalSnapTextButton
+import com.company.app.ui.theme.*
 
-private val PaywallBlack = Color(0xFF0A0A0A)
+private val FEATURES = listOf(
+    "camera"  to "Unlimited AI food scans",
+    "chart"   to "Weekly analytics & trends",
+    "flash"   to "Full macro & nutrition tracking",
+    "star"    to "Priority support",
+)
 
 @Composable
 fun PaywallScreen(
@@ -24,173 +33,194 @@ fun PaywallScreen(
     isGuestMode: Boolean = false,
     onEntitled: () -> Unit,
     onRegister: () -> Unit = {},
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
 
     when (val s = state) {
         is SubscriptionState.Entitled -> onEntitled()
         else -> PaywallContent(
-            isLoading = s is SubscriptionState.Purchasing,
+            isPurchasing = s is SubscriptionState.Purchasing,
             errorMessage = (s as? SubscriptionState.Error)?.message,
             isGuestMode = isGuestMode,
             onSubscribe = { viewModel.purchase() },
             onRestore = { viewModel.restore() },
             onRegister = onRegister,
-            onBack = onBack
+            onBack = onBack,
         )
     }
 }
 
 @Composable
 private fun PaywallContent(
-    isLoading: Boolean,
+    isPurchasing: Boolean,
     errorMessage: String?,
     isGuestMode: Boolean,
     onSubscribe: () -> Unit,
     onRestore: () -> Unit,
     onRegister: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
-    Surface(modifier = Modifier.fillMaxSize(), color = Color.White) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CalSnapColors.Background),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = CalSnapSpacing.screenPad),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(52.dp))
+            Spacer(Modifier.height(CalSnapSpacing.xxl))
 
-            // Header
+            // Icon
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(CircleShape)
+                    .background(CalSnapColors.CarbBg),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("★", fontSize = 32.sp)
+            }
+
+            Spacer(Modifier.height(CalSnapSpacing.lg))
+
             Text(
-                text = if (isGuestMode) "Your free scans are up." else "Go Premium",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = PaywallBlack,
-                textAlign = TextAlign.Center
+                text = if (isGuestMode) buildAnnotatedString {
+                    append("Your free scans\nare ")
+                    withStyle(SpanStyle(color = CalSnapColors.Red)) { append("used up.") }
+                } else buildAnnotatedString {
+                    append("Go ")
+                    withStyle(SpanStyle(color = CalSnapColors.Red)) { append("Premium") }
+                },
+                style = CalSnapType.HeadlineLarge,
+                color = CalSnapColors.Ink,
+                textAlign = TextAlign.Center,
             )
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(CalSnapSpacing.sm))
 
             Text(
                 text = "Unlock unlimited AI scans,\nmacro tracking, and more.",
-                fontSize = 16.sp,
-                color = PaywallBlack.copy(alpha = 0.55f),
+                style = CalSnapType.Body,
+                color = CalSnapColors.Muted,
                 textAlign = TextAlign.Center,
-                lineHeight = 22.sp
             )
 
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(CalSnapSpacing.xl))
 
             // Price card
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color(0xFFF5F5F5))
-                    .padding(24.dp)
+                    .clip(RoundedCornerShape(CalSnapRadius.xl))
+                    .background(CalSnapColors.Surface)
+                    .padding(CalSnapSpacing.cardPadLg),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(CalSnapSpacing.xs),
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "CalSnap Premium",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = PaywallBlack
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = "Rp 499.000 / year",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = PaywallBlack
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = "Rp 41.583 / month  •  7-day free trial",
-                        fontSize = 13.sp,
-                        color = PaywallBlack.copy(alpha = 0.5f)
-                    )
-                }
+                Text(
+                    text = "CalSnap Premium",
+                    style = CalSnapType.HeadlineMedium,
+                    color = CalSnapColors.Ink,
+                )
+                Text(
+                    text = "Rp 499.000 / year",
+                    style = CalSnapType.Display.copy(fontSize = 36.sp),
+                    color = CalSnapColors.Ink,
+                )
+                Text(
+                    text = "Rp 41.583/mo  •  7-day free trial",
+                    style = CalSnapType.BodySmall,
+                    color = CalSnapColors.Muted,
+                )
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(CalSnapSpacing.lg))
 
             // Feature list
-            listOf(
-                "Unlimited AI food scans",
-                "Full nutrition & macro tracking",
-                "Weekly analytics & trends",
-                "Priority support"
-            ).forEach { feature ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("✓", fontWeight = FontWeight.Bold, color = PaywallBlack, fontSize = 14.sp)
-                    Spacer(Modifier.width(10.dp))
-                    Text(feature, fontSize = 14.sp, color = PaywallBlack.copy(alpha = 0.75f))
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(CalSnapSpacing.sm),
+            ) {
+                FEATURES.forEach { (icon, label) ->
+                    FeatureRow(icon = icon, label = label)
                 }
             }
 
-            if (errorMessage != null) {
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = errorMessage,
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 13.sp,
-                    textAlign = TextAlign.Center
-                )
+            errorMessage?.let {
+                Spacer(Modifier.height(CalSnapSpacing.sm))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(CalSnapRadius.md))
+                        .background(CalSnapColors.RedSoft)
+                        .padding(CalSnapSpacing.md),
+                ) {
+                    Text(it, style = CalSnapType.BodySmall, color = CalSnapColors.Red)
+                }
             }
 
             Spacer(Modifier.weight(1f))
 
-            // Subscribe CTA
-            Button(
-                onClick = onSubscribe,
-                enabled = !isLoading,
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PaywallBlack,
-                    contentColor = Color.White
+            if (isPurchasing) {
+                CircularProgressIndicator(color = CalSnapColors.Red, modifier = Modifier.size(28.dp))
+                Spacer(Modifier.height(CalSnapSpacing.md))
+            } else {
+                CalSnapBrandButton(
+                    text = "Start 7-Day Free Trial",
+                    onClick = onSubscribe,
                 )
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
+                Spacer(Modifier.height(CalSnapSpacing.xs))
+                if (isGuestMode) {
+                    CalSnapTextButton(
+                        text = "Create free account instead",
+                        onClick = onRegister,
+                    )
                 } else {
-                    Text("Start 7-Day Free Trial", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-                }
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            // Register option (guest) or Restore (existing user)
-            if (isGuestMode) {
-                TextButton(onClick = onRegister) {
-                    Text(
-                        "Create free account instead",
-                        color = PaywallBlack.copy(alpha = 0.5f),
-                        fontSize = 14.sp
+                    CalSnapTextButton(
+                        text = "Restore Purchase",
+                        onClick = onRestore,
                     )
                 }
-            } else {
-                TextButton(onClick = onRestore, enabled = !isLoading) {
-                    Text("Restore Purchase", color = PaywallBlack.copy(alpha = 0.5f), fontSize = 14.sp)
-                }
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            // Back / footer
-            TextButton(onClick = onBack) {
-                Text(
-                    if (isGuestMode) "← Back to trial" else "← Back",
-                    color = PaywallBlack.copy(alpha = 0.35f),
-                    fontSize = 13.sp
+                CalSnapTextButton(
+                    text = if (isGuestMode) "← Back to trial" else "← Back",
+                    onClick = onBack,
+                    color = CalSnapColors.Hint,
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(CalSnapSpacing.lg))
         }
+    }
+}
+
+@Composable
+private fun FeatureRow(icon: String, label: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(CalSnapSpacing.md),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(CalSnapRadius.sm))
+                .background(CalSnapColors.SurfaceAlt),
+            contentAlignment = Alignment.Center,
+        ) {
+            com.company.app.ui.components.CalSnapIcon(
+                name = icon,
+                size = 18.dp,
+                color = CalSnapColors.Ink,
+            )
+        }
+        Text(
+            text = label,
+            style = CalSnapType.Body,
+            color = CalSnapColors.Ink,
+        )
     }
 }

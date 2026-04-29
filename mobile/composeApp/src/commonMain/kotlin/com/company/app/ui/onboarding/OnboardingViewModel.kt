@@ -8,57 +8,51 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 data class OnboardingState(
-    val step: Int = 1,
-    // Step 1 inputs
-    val name: String = "",
-    val heightCm: String = "",
-    val weightKg: String = "",
-    val birthDate: String = "",
-    val gender: String = "MALE",
+    val step: Int = 1,              // 1=Goal  2=Body  3=Activity  4=PlanReveal
+    val goal: String = "LOSE",      // LOSE | MAINTAIN | GAIN
+    val weightKg: Float = 75f,
+    val targetWeightKg: Float = 65f,
+    val heightCm: Float = 170f,
+    val age: Int = 25,
+    val gender: String = "MALE",    // MALE | FEMALE
     val activityLevel: String = "SEDENTARY",
-    // Step 2 inputs
-    val goal: String = "MAINTAIN",
-    val targetWeightKg: String = "",
-    // Step 2 preview
     val bmrPreview: BmrPreviewResponse? = null,
     val isLoadingPreview: Boolean = false,
     val isSaving: Boolean = false,
     val error: String? = null,
-    val isComplete: Boolean = false
+    val isComplete: Boolean = false,
 )
 
 class OnboardingViewModel(private val bodyProfileRepo: BodyProfileRepository) {
     private val scope = CoroutineScope(Dispatchers.Main)
-
     private val _state = MutableStateFlow(OnboardingState())
     val state: StateFlow<OnboardingState> = _state
 
-    fun onHeightChanged(v: String) { _state.value = _state.value.copy(heightCm = v) }
-    fun onWeightChanged(v: String) { _state.value = _state.value.copy(weightKg = v) }
-    fun onBirthDateChanged(v: String) { _state.value = _state.value.copy(birthDate = v) }
-    fun onGenderChanged(v: String) { _state.value = _state.value.copy(gender = v) }
-    fun onActivityChanged(v: String) { _state.value = _state.value.copy(activityLevel = v) }
-    fun onGoalChanged(v: String) { _state.value = _state.value.copy(goal = v, bmrPreview = null) }
-    fun onTargetWeightChanged(v: String) { _state.value = _state.value.copy(targetWeightKg = v) }
+    fun onGoalChanged(goal: String) { _state.value = _state.value.copy(goal = goal, bmrPreview = null) }
+    fun onWeightChanged(kg: Float) { _state.value = _state.value.copy(weightKg = kg) }
+    fun onTargetWeightChanged(kg: Float) { _state.value = _state.value.copy(targetWeightKg = kg) }
+    fun onHeightChanged(cm: Float) { _state.value = _state.value.copy(heightCm = cm) }
+    fun onAgeChanged(age: Int) { _state.value = _state.value.copy(age = age) }
+    fun onGenderChanged(gender: String) { _state.value = _state.value.copy(gender = gender) }
+    fun onActivityChanged(level: String) { _state.value = _state.value.copy(activityLevel = level) }
 
-    fun goToStep2() {
-        val s = _state.value
-        if (s.heightCm.isBlank() || s.weightKg.isBlank() || s.birthDate.isBlank()) {
-            _state.value = s.copy(error = "Please fill all fields")
-            return
-        }
-        _state.value = s.copy(step = 2, error = null)
-        loadBmrPreview()
+    fun goToStep(step: Int) {
+        _state.value = _state.value.copy(step = step, error = null)
+        if (step == 4) loadBmrPreview()
     }
 
     fun goBack() {
-        _state.value = _state.value.copy(step = 1, error = null)
+        val prev = (_state.value.step - 1).coerceAtLeast(1)
+        _state.value = _state.value.copy(step = prev, error = null)
     }
 
     fun loadBmrPreview() {
-        val req = buildRequest() ?: return
+        val req = buildRequest()
         _state.value = _state.value.copy(isLoadingPreview = true, bmrPreview = null)
         scope.launch {
             bodyProfileRepo.previewBmr(req)
@@ -68,7 +62,7 @@ class OnboardingViewModel(private val bodyProfileRepo: BodyProfileRepository) {
     }
 
     fun save() {
-        val req = buildRequest() ?: return
+        val req = buildRequest()
         _state.value = _state.value.copy(isSaving = true, error = null)
         scope.launch {
             bodyProfileRepo.save(req)
@@ -77,19 +71,18 @@ class OnboardingViewModel(private val bodyProfileRepo: BodyProfileRepository) {
         }
     }
 
-    private fun buildRequest(): BodyProfileRequest? {
+    private fun buildRequest(): BodyProfileRequest {
         val s = _state.value
-        val height = s.heightCm.toDoubleOrNull() ?: return null
-        val weight = s.weightKg.toDoubleOrNull() ?: return null
-        if (s.birthDate.isBlank()) return null
+        val currentYear = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).year
+        val birthDate = "${currentYear - s.age}-01-01"
         return BodyProfileRequest(
-            heightCm = height,
-            weightKg = weight,
-            birthDate = s.birthDate,
+            heightCm = s.heightCm.toDouble(),
+            weightKg = s.weightKg.toDouble(),
+            birthDate = birthDate,
             gender = s.gender,
             activityLevel = s.activityLevel,
             goal = s.goal,
-            targetWeightKg = s.targetWeightKg.toDoubleOrNull()
+            targetWeightKg = if (s.goal != "MAINTAIN") s.targetWeightKg.toDouble() else null,
         )
     }
 }

@@ -1,23 +1,30 @@
 package com.company.app.ui.aiscan
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.company.app.shared.data.model.AiDetectedFood
+import com.company.app.ui.components.*
+import com.company.app.ui.theme.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiScanResultScreen(
     viewModel: AiScanViewModel,
@@ -25,7 +32,7 @@ fun AiScanResultScreen(
     isGuestMode: Boolean = false,
     onConfirmed: () -> Unit,
     onBack: () -> Unit,
-    onRegisterFromGuest: () -> Unit = {}
+    onRegisterFromGuest: () -> Unit = {},
 ) {
     val state = viewModel.state
     val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
@@ -34,179 +41,396 @@ fun AiScanResultScreen(
         if (state.confirmed) onConfirmed()
     }
 
-    if (state.isAnalyzing) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                CircularProgressIndicator()
-                Text("AI sedang menganalisis makanan...")
-            }
-        }
-        return
-    }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CalSnapColors.Surface),
+    ) {
+        when {
+            state.isAnalyzing -> AnalyzingContent()
+            state.scanResult == null -> EmptyScanContent(onBack = onBack)
+            else -> {
+                val result = state.scanResult
+                val totalKcal = state.selectedFoods.sumOf { it.totalCalories.let { c ->
+                    if (c > 0.0) c else it.caloriesPer100g * it.portionG / 100.0
+                }}
 
-    val result = state.scanResult
-    if (result == null) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Tidak ada hasil scan", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(16.dp))
-                Button(onClick = onBack) { Text("Kembali") }
-            }
-        }
-        return
-    }
+                LazyColumn(
+                    contentPadding = PaddingValues(bottom = 120.dp),
+                ) {
+                    item {
+                        ResultHeader(
+                            count = result.detectedFoods.size,
+                            onBack = onBack,
+                        )
+                    }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Hasil Scan AI") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Text("←") }
+                    if (result.detectedFoods.isEmpty()) {
+                        item { NoFoodDetectedCard() }
+                    } else {
+                        items(result.detectedFoods, key = { "${it.name}_${it.matchedFoodId}" }) { food ->
+                            val isSelected = state.selectedFoods.any {
+                                it.name == food.name && it.matchedFoodId == food.matchedFoodId
+                            }
+                            val currentFood = state.selectedFoods.find {
+                                it.name == food.name && it.matchedFoodId == food.matchedFoodId
+                            } ?: food
+
+                            FoodDetectedCard(
+                                food = currentFood,
+                                isSelected = isSelected,
+                                onToggle = { viewModel.toggleFood(food) },
+                                onPortionChange = { viewModel.updatePortion(food, it) },
+                            )
+                        }
+                    }
+
+                    state.error?.let {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = CalSnapSpacing.screenPad)
+                                    .clip(RoundedCornerShape(CalSnapRadius.md))
+                                    .background(CalSnapColors.RedSoft)
+                                    .padding(CalSnapSpacing.md),
+                            ) {
+                                Text(
+                                    text = it,
+                                    style = CalSnapType.Body,
+                                    color = CalSnapColors.Red,
+                                )
+                            }
+                        }
+                    }
                 }
-            )
-        },
-        bottomBar = {
-            Surface(shadowElevation = 4.dp) {
-                if (isGuestMode) {
-                    GuestResultBottomBar(onRegisterFromGuest = onRegisterFromGuest)
-                } else {
-                    Button(
-                        onClick = { viewModel.confirm(mealType, today) },
-                        enabled = state.selectedFoods.isNotEmpty() && !state.isConfirming,
-                        modifier = Modifier.fillMaxWidth().padding(16.dp)
-                    ) {
-                        if (state.isConfirming) {
-                            CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                        } else {
-                            Text("Catat ${state.selectedFoods.size} Makanan")
+
+                // Bottom action bar
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .background(CalSnapColors.Background)
+                        .navigationBarsPadding()
+                        .padding(CalSnapSpacing.screenPad),
+                ) {
+                    if (isGuestMode) {
+                        GuestBottomBar(onRegister = onRegisterFromGuest)
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            if (state.selectedFoods.isNotEmpty()) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Text(
+                                        text = "${state.selectedFoods.size} items selected",
+                                        style = CalSnapType.BodySmall,
+                                        color = CalSnapColors.Muted,
+                                    )
+                                    Text(
+                                        text = "${totalKcal.toInt()} kcal",
+                                        style = CalSnapType.BodySmall,
+                                        color = CalSnapColors.Ink,
+                                    )
+                                }
+                            }
+                            CalSnapBrandButton(
+                                text = if (state.isConfirming) "Saving…"
+                                       else "Log ${state.selectedFoods.size} items",
+                                onClick = { viewModel.confirm(mealType, today) },
+                                enabled = state.selectedFoods.isNotEmpty() && !state.isConfirming,
+                            )
                         }
                     }
                 }
             }
         }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+    }
+}
+
+@Composable
+private fun AnalyzingContent() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(CalSnapSpacing.md),
         ) {
-            item {
-                if (result.detectedFoods.isEmpty()) {
-                    Card(Modifier.fillMaxWidth()) {
-                        Box(Modifier.padding(24.dp), contentAlignment = Alignment.Center) {
-                            Text("Tidak ada makanan terdeteksi. Coba foto lagi dengan pencahayaan lebih baik.")
-                        }
-                    }
-                } else {
-                    Text(
-                        "AI mendeteksi ${result.detectedFoods.size} makanan. Centang yang ingin dicatat:",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            items(result.detectedFoods) { food ->
-                val isSelected = state.selectedFoods.any { it.name == food.name && it.matchedFoodId == food.matchedFoodId }
-                val currentFood = state.selectedFoods.find { it.name == food.name && it.matchedFoodId == food.matchedFoodId } ?: food
-
-                AiDetectedFoodCard(
-                    food = currentFood,
-                    isSelected = isSelected,
-                    onToggle = { viewModel.toggleFood(food) },
-                    onPortionChange = { newPortion -> viewModel.updatePortion(food, newPortion) }
+            Box(
+                modifier = Modifier
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .background(CalSnapColors.SurfaceAlt),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(
+                    color = CalSnapColors.Red,
+                    modifier = Modifier.size(36.dp),
+                    strokeWidth = 3.dp,
                 )
             }
+            Text(
+                text = "Analyzing your meal…",
+                style = CalSnapType.HeadlineMedium,
+                color = CalSnapColors.Ink,
+            )
+            Text(
+                text = "This takes a few seconds",
+                style = CalSnapType.Body,
+                color = CalSnapColors.Muted,
+            )
+        }
+    }
+}
 
-            if (state.error != null) {
-                item {
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+@Composable
+private fun EmptyScanContent(onBack: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(CalSnapSpacing.md),
+            modifier = Modifier.padding(CalSnapSpacing.xl),
+        ) {
+            Text("📷", fontSize = 48.sp)
+            Text(
+                text = "No scan result",
+                style = CalSnapType.HeadlineMedium,
+                color = CalSnapColors.Ink,
+            )
+            CalSnapTextButton(text = "Go back", onClick = onBack)
+        }
+    }
+}
+
+@Composable
+private fun ResultHeader(count: Int, onBack: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = CalSnapSpacing.screenPad)
+            .padding(top = CalSnapSpacing.lg, bottom = CalSnapSpacing.md),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(CalSnapSpacing.sm),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(CalSnapColors.SurfaceAlt)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onBack,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            CalSnapIcon(name = "chev-l", size = 18.dp, color = CalSnapColors.Ink)
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "AI Detected $count ${if (count == 1) "item" else "items"}",
+                style = CalSnapType.HeadlineMedium,
+                color = CalSnapColors.Ink,
+            )
+            Text(
+                text = "Tap to deselect items you don't want to log",
+                style = CalSnapType.BodySmall,
+                color = CalSnapColors.Muted,
+            )
+        }
+    }
+}
+
+@Composable
+private fun NoFoodDetectedCard() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = CalSnapSpacing.screenPad)
+            .clip(RoundedCornerShape(CalSnapRadius.card))
+            .background(CalSnapColors.SurfaceAlt)
+            .padding(CalSnapSpacing.xl),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(CalSnapSpacing.sm),
+        ) {
+            Text("🤔", fontSize = 36.sp)
+            Text(
+                text = "No food detected",
+                style = CalSnapType.HeadlineMedium,
+                color = CalSnapColors.Ink,
+            )
+            Text(
+                text = "Try retaking the photo with better lighting\nor a clearer view of the food.",
+                style = CalSnapType.Body,
+                color = CalSnapColors.Muted,
+            )
+        }
+    }
+}
+
+@Composable
+private fun FoodDetectedCard(
+    food: AiDetectedFood,
+    isSelected: Boolean,
+    onToggle: () -> Unit,
+    onPortionChange: (Double) -> Unit,
+) {
+    var portionText by remember(food.portionG) { mutableStateOf(food.portionG.toInt().toString()) }
+    val kcal = food.caloriesPer100g * (portionText.toDoubleOrNull() ?: food.portionG) / 100.0
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = CalSnapSpacing.screenPad, vertical = CalSnapSpacing.xs)
+            .clip(RoundedCornerShape(CalSnapRadius.card))
+            .background(if (isSelected) CalSnapColors.Background else CalSnapColors.SurfaceAlt)
+            .border(
+                width = if (isSelected) 2.dp else 1.dp,
+                color = if (isSelected) CalSnapColors.Ink else CalSnapColors.Border,
+                shape = RoundedCornerShape(CalSnapRadius.card),
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onToggle,
+            )
+            .padding(CalSnapSpacing.md),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(CalSnapSpacing.sm),
+    ) {
+        CalSnapFoodPhoto(
+            name = food.name,
+            size = 52.dp,
+            cornerRadius = CalSnapRadius.md,
+        )
+
+        Column(modifier = Modifier.weight(1f)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = food.name,
+                    style = CalSnapType.BodyLarge,
+                    color = CalSnapColors.Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (food.matchedFoodId != null) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(CalSnapRadius.pill))
+                            .background(CalSnapColors.GoodBg)
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
+                    ) {
                         Text(
-                            state.error,
-                            modifier = Modifier.padding(16.dp),
-                            color = MaterialTheme.colorScheme.onErrorContainer
+                            text = "✓ matched",
+                            style = CalSnapType.Label,
+                            color = CalSnapColors.Good,
                         )
                     }
                 }
             }
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = "P${food.proteinPer100g.toInt()} C${food.carbsPer100g.toInt()} F${food.fatPer100g.toInt()} per 100g",
+                style = CalSnapType.BodySmall,
+                color = CalSnapColors.Muted,
+            )
+        }
+
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            // Portion stepper
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                PortionStepButton("-") {
+                    val current = portionText.toDoubleOrNull() ?: food.portionG
+                    val next = (current - 10.0).coerceAtLeast(10.0)
+                    portionText = next.toInt().toString()
+                    onPortionChange(next)
+                }
+                Text(
+                    text = "${portionText}g",
+                    style = CalSnapType.BodySmall,
+                    color = CalSnapColors.Ink,
+                )
+                PortionStepButton("+") {
+                    val current = portionText.toDoubleOrNull() ?: food.portionG
+                    val next = current + 10.0
+                    portionText = next.toInt().toString()
+                    onPortionChange(next)
+                }
+            }
+            Text(
+                text = "${kcal.toInt()} kcal",
+                style = CalSnapType.BodySmall,
+                color = CalSnapColors.Muted,
+            )
+        }
+
+        // Selection indicator
+        Box(
+            modifier = Modifier
+                .size(22.dp)
+                .clip(CircleShape)
+                .background(if (isSelected) CalSnapColors.Ink else CalSnapColors.Divider),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (isSelected) {
+                Text("✓", color = CalSnapColors.Background, fontSize = 11.sp)
+            }
         }
     }
 }
 
 @Composable
-private fun GuestResultBottomBar(onRegisterFromGuest: () -> Unit) {
-    Column(
+private fun PortionStepButton(label: String, onClick: () -> Unit) {
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+            .size(24.dp)
+            .clip(RoundedCornerShape(CalSnapRadius.sm))
+            .background(CalSnapColors.SurfaceAlt)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            style = CalSnapType.BodyLarge,
+            color = CalSnapColors.Ink,
+        )
+    }
+}
+
+@Composable
+private fun GuestBottomBar(onRegister: () -> Unit) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(CalSnapSpacing.xs),
     ) {
         Text(
             text = "Create a free account to save these results",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            style = CalSnapType.BodySmall,
+            color = CalSnapColors.Muted,
         )
-        Button(
-            onClick = onRegisterFromGuest,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Create Account & Save")
-        }
-    }
-}
-
-@Composable
-private fun AiDetectedFoodCard(
-    food: AiDetectedFood,
-    isSelected: Boolean,
-    onToggle: () -> Unit,
-    onPortionChange: (Double) -> Unit
-) {
-    var portionText by remember(food.portionG) { mutableStateOf(food.portionG.toInt().toString()) }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
-            else MaterialTheme.colorScheme.surface
+        CalSnapPrimaryButton(
+            text = "Create Account & Save",
+            onClick = onRegister,
         )
-    ) {
-        Row(
-            Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Checkbox(checked = isSelected, onCheckedChange = { onToggle() })
-            Spacer(Modifier.width(8.dp))
-            Column(Modifier.weight(1f)) {
-                Text(food.name, fontWeight = FontWeight.SemiBold)
-                if (food.matchedFoodId != null) {
-                    Text("Cocok di database ✓", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
-                }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "${food.caloriesPer100g.toInt()} kcal/100g  •  " +
-                    "P:${food.proteinPer100g.toInt()}g C:${food.carbsPer100g.toInt()}g F:${food.fatPer100g.toInt()}g",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Spacer(Modifier.width(8.dp))
-            Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(80.dp)) {
-                OutlinedTextField(
-                    value = portionText,
-                    onValueChange = { v ->
-                        portionText = v
-                        v.toDoubleOrNull()?.let { onPortionChange(it) }
-                    },
-                    label = { Text("gram", fontSize = 10.sp) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                val kcal = food.caloriesPer100g * (portionText.toDoubleOrNull() ?: food.portionG) / 100.0
-                Text("${kcal.toInt()} kcal", fontSize = 12.sp, fontWeight = FontWeight.Medium)
-            }
-        }
     }
 }
