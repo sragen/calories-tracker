@@ -1,6 +1,7 @@
 package com.company.app.ui.welcome
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -119,7 +120,12 @@ fun WelcomeScreen(
                     onClick = onTryFree,
                 )
                 Spacer(Modifier.height(16.dp))
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onLogin),
+                    contentAlignment = Alignment.Center,
+                ) {
                     Text(
                         text = buildAnnotatedString {
                             append("Already have an account? ")
