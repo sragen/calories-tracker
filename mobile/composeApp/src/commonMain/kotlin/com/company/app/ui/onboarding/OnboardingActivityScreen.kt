@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import com.company.app.ui.components.CalSnapIcon
 import com.company.app.ui.components.CalSnapPrimaryButton
 import com.company.app.ui.components.CalSnapTextButton
 import com.company.app.ui.theme.*
@@ -25,11 +26,11 @@ private data class ActivityOption(
 )
 
 private val ACTIVITY_OPTIONS = listOf(
-    ActivityOption("SEDENTARY", "1", "Sedentary", "Little or no exercise"),
-    ActivityOption("LIGHTLY_ACTIVE", "2", "Lightly Active", "Light exercise 1–3 days/week"),
-    ActivityOption("MODERATELY_ACTIVE", "3", "Moderately Active", "Moderate exercise 3–5 days/week"),
-    ActivityOption("VERY_ACTIVE", "4", "Very Active", "Hard exercise 6–7 days/week"),
-    ActivityOption("EXTRA_ACTIVE", "5", "Extra Active", "Very hard exercise or physical job"),
+    ActivityOption("SEDENTARY",        "1", "Sedentary",       "Mostly sitting, little exercise"),
+    ActivityOption("LIGHTLY_ACTIVE",   "2", "Lightly active",  "Light walks, 1–2 workouts / week"),
+    ActivityOption("MODERATELY_ACTIVE","3", "Moderate",        "3–5 workouts / week"),
+    ActivityOption("VERY_ACTIVE",      "4", "Very active",     "Daily training"),
+    ActivityOption("EXTRA_ACTIVE",     "5", "Athlete",         "Multiple sessions / day"),
 )
 
 @Composable
@@ -60,7 +61,7 @@ fun OnboardingActivityScreen(
         Spacer(Modifier.height(CalSnapSpacing.sm))
 
         Text(
-            text = "Choose your typical weekly activity level.",
+            text = "Outside of intentional workouts.",
             style = CalSnapType.Body,
             color = CalSnapColors.Muted,
         )
@@ -146,6 +147,10 @@ private fun ActivityCard(
                 style = CalSnapType.BodySmall,
                 color = CalSnapColors.Muted,
             )
+        }
+
+        if (isSelected) {
+            CalSnapIcon(name = "check", size = 18.dp, color = CalSnapColors.Ink, strokeWidth = 2.5f)
         }
     }
 }

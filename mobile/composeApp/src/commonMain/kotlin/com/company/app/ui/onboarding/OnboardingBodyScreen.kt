@@ -36,7 +36,7 @@ fun OnboardingBodyScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(CalSnapColors.Background)
+            .background(CalSnapColors.Surface)
             .padding(horizontal = CalSnapSpacing.screenPad),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -47,7 +47,7 @@ fun OnboardingBodyScreen(
         Spacer(Modifier.height(CalSnapSpacing.lg))
 
         Text(
-            text = "Your body details",
+            text = "A few quick numbers",
             style = CalSnapType.HeadlineLarge,
             color = CalSnapColors.Ink,
         )
@@ -55,7 +55,7 @@ fun OnboardingBodyScreen(
         Spacer(Modifier.height(CalSnapSpacing.sm))
 
         Text(
-            text = "We'll calculate your exact calorie target.",
+            text = "We use these to calculate your BMR & daily targets. Nothing leaves your phone.",
             style = CalSnapType.Body,
             color = CalSnapColors.Muted,
         )
