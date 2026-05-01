@@ -14,6 +14,7 @@ backend/src/main/resources/application-local.yml
 
 # Build outputs
 backend/build/
+backend/bin/
 backend/.gradle/
 backend/.kotlin/
 admin/.next/
@@ -43,3 +44,5 @@ mobile/androidApp/build/
 mobile/composeApp/build/
 mobile/shared/build/
 .claude
+mobile/iosApp/iosApp.xcodeproj/xcuserdata/
+mobile/iosApp/iosApp.xcodeproj/project.xcworkspace/xcuserdata/
