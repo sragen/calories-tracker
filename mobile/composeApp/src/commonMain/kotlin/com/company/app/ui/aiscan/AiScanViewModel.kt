@@ -27,7 +27,9 @@ class AiScanViewModel(private val aiScanRepo: AiScanRepository) {
     private val scope = CoroutineScope(Dispatchers.Main)
 
     fun analyze(imageBytes: ByteArray, mimeType: String = "image/jpeg") {
-        state = state.copy(isAnalyzing = true, error = null, scanResult = null)
+        // Full reset — ViewModel is shared across scans, so leftover `confirmed`
+        // or `selectedFoods` from a prior scan would otherwise leak into this one.
+        state = AiScanState(isAnalyzing = true)
         scope.launch {
             aiScanRepo.analyze(imageBytes, mimeType).fold(
                 onSuccess = { result ->
