@@ -22,14 +22,15 @@ class AuthController(
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    fun register(@Valid @RequestBody req: RegisterRequest): UserResponse {
+    fun register(@Valid @RequestBody req: RegisterRequest): AuthResponse {
         if (userRepository.findByEmailAndDeletedAtIsNull(req.email) != null)
             throw AppException.conflict("Email already registered")
 
-        return userRepository.save(
+        val user = userRepository.save(
             User(email = req.email, phone = req.phone,
                  password = passwordEncoder.encode(req.password), name = req.name)
-        ).toResponse()
+        )
+        return buildAuthResponse(user)
     }
 
     @PostMapping("/login")
