@@ -71,7 +71,7 @@ class GeminiService(
 
         return try {
             val response = restClient.post()
-                .uri("/gemini-2.0-flash:generateContent?key=$apiKey")
+                .uri("/gemini-2.5-flash:generateContent?key=$apiKey")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(requestBody)
                 .retrieve()
