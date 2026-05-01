@@ -10,26 +10,32 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.company.app.shared.data.model.DailyRangeSummary
 import com.company.app.ui.components.CalSnapBrandButton
+import com.company.app.ui.components.CalSnapBottomTabBar
 import com.company.app.ui.components.CalSnapIcon
+import com.company.app.ui.components.CalSnapTab
 import com.company.app.ui.theme.*
 
 @Composable
 fun AnalyticsScreen(
     viewModel: AnalyticsViewModel,
+    onTabSelected: (CalSnapTab) -> Unit = {},
+    onSnapTap: () -> Unit = {},
     onUpgrade: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -38,7 +44,7 @@ fun AnalyticsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CalSnapColors.Surface),
+            .background(CalSnapColors.Background),
     ) {
         when {
             state.isLoading -> {
@@ -52,9 +58,9 @@ fun AnalyticsScreen(
             }
             else -> {
                 LazyColumn(
-                    contentPadding = PaddingValues(bottom = CalSnapSpacing.xxl),
+                    contentPadding = PaddingValues(bottom = 100.dp),
                 ) {
-                    item { AnalyticsHeader(onBack = onBack, onRefresh = viewModel::refresh) }
+                    item { StatsHeader(onRefresh = viewModel::refresh) }
 
                     item {
                         Spacer(Modifier.height(CalSnapSpacing.sm))
@@ -109,54 +115,79 @@ fun AnalyticsScreen(
                 }
             }
         }
+
+        CalSnapBottomTabBar(
+            selectedTab = CalSnapTab.STATS,
+            onTabSelected = { tab ->
+                if (tab == CalSnapTab.STATS) viewModel.refresh() else onTabSelected(tab)
+            },
+            onSnapTap = onSnapTap,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
     }
 }
 
 @Composable
-private fun AnalyticsHeader(onBack: () -> Unit, onRefresh: () -> Unit) {
+private fun StatsHeader(onRefresh: () -> Unit) {
+    var selectedPeriod by remember { mutableStateOf(0) }
+    val periods = listOf("W", "M", "Y")
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = CalSnapSpacing.screenPad)
-            .padding(top = CalSnapSpacing.lg, bottom = CalSnapSpacing.sm),
+            .padding(top = 60.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(CalSnapSpacing.sm),
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(CalSnapColors.SurfaceAlt)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onBack,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            CalSnapIcon(name = "chev-l", size = 18.dp, color = CalSnapColors.Ink)
-        }
-
         Text(
-            text = "Analytics",
-            style = CalSnapType.HeadlineMedium,
+            text = "Stats",
+            fontSize = 26.sp,
+            fontWeight = FontWeight.W700,
             color = CalSnapColors.Ink,
-            modifier = Modifier.weight(1f),
+            letterSpacing = (-0.6).sp,
         )
 
-        Box(
+        Row(
             modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
+                .clip(RoundedCornerShape(10.dp))
                 .background(CalSnapColors.SurfaceAlt)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onRefresh,
-                ),
-            contentAlignment = Alignment.Center,
+                .padding(3.dp),
+            horizontalArrangement = Arrangement.spacedBy(0.dp),
         ) {
-            CalSnapIcon(name = "arrow-r", size = 18.dp, color = CalSnapColors.Ink)
+            periods.forEachIndexed { i, label ->
+                val selected = i == selectedPeriod
+                Box(
+                    modifier = Modifier
+                        .size(width = 32.dp, height = 28.dp)
+                        .then(
+                            if (selected) Modifier.shadow(
+                                elevation = 2.dp,
+                                shape = RoundedCornerShape(8.dp),
+                                ambientColor = Color.Black.copy(alpha = 0.1f),
+                                spotColor = Color.Black.copy(alpha = 0.1f),
+                            ) else Modifier
+                        )
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (selected) CalSnapColors.Background else Color.Transparent)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                selectedPeriod = i
+                                onRefresh()
+                            },
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = label,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.W700,
+                        color = if (selected) CalSnapColors.Ink else CalSnapColors.Muted,
+                    )
+                }
+            }
         }
     }
 }
@@ -168,6 +199,7 @@ private fun WeeklyCalorieChart(
 ) {
     Column(
         modifier = modifier
+            .shadow(elevation = 4.dp, shape = RoundedCornerShape(CalSnapRadius.card), ambientColor = Color(0x0A140F08), spotColor = Color(0x0F140F08))
             .clip(RoundedCornerShape(CalSnapRadius.card))
             .background(CalSnapColors.Background)
             .padding(CalSnapSpacing.cardPad),
@@ -256,6 +288,7 @@ private fun AverageMacrosCard(
 ) {
     Column(
         modifier = modifier
+            .shadow(elevation = 4.dp, shape = RoundedCornerShape(CalSnapRadius.card), ambientColor = Color(0x0A140F08), spotColor = Color(0x0F140F08))
             .clip(RoundedCornerShape(CalSnapRadius.card))
             .background(CalSnapColors.Background)
             .padding(CalSnapSpacing.cardPad),
@@ -289,6 +322,7 @@ private fun MacroBreakdownBars(
 
     Column(
         modifier = modifier
+            .shadow(elevation = 4.dp, shape = RoundedCornerShape(CalSnapRadius.card), ambientColor = Color(0x0A140F08), spotColor = Color(0x0F140F08))
             .clip(RoundedCornerShape(CalSnapRadius.card))
             .background(CalSnapColors.Background)
             .padding(CalSnapSpacing.cardPad),

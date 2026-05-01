@@ -12,6 +12,7 @@ import com.company.app.ui.aiscan.AiScanScreen
 import com.company.app.ui.aiscan.AiScanViewModel
 import com.company.app.ui.analytics.AnalyticsScreen
 import com.company.app.ui.analytics.AnalyticsViewModel
+import com.company.app.ui.components.CalSnapTab
 import com.company.app.ui.home.HomeScreen
 import com.company.app.ui.home.HomeViewModel
 import com.company.app.ui.login.LoginScreen
@@ -251,6 +252,15 @@ private fun AppContent() {
             val viewModel: AnalyticsViewModel = koinInject()
             AnalyticsScreen(
                 viewModel = viewModel,
+                onTabSelected = { tab ->
+                    when (tab) {
+                        CalSnapTab.HOME -> currentScreen = Screen.Home
+                        CalSnapTab.LOG -> { pendingMealType = "SNACK"; currentScreen = Screen.SearchFood }
+                        CalSnapTab.PROFILE -> currentScreen = Screen.Profile
+                        else -> {}
+                    }
+                },
+                onSnapTap = { pendingMealType = "SNACK"; currentScreen = Screen.AiScan },
                 onUpgrade = { currentScreen = Screen.Paywall },
                 onBack = { currentScreen = Screen.Home }
             )
@@ -259,6 +269,16 @@ private fun AppContent() {
             val viewModel: ProfileViewModel = koinInject()
             ProfileScreen(
                 viewModel = viewModel,
+                onTabSelected = { tab ->
+                    when (tab) {
+                        CalSnapTab.HOME -> currentScreen = Screen.Home
+                        CalSnapTab.STATS -> currentScreen = Screen.Analytics
+                        CalSnapTab.LOG -> { pendingMealType = "SNACK"; currentScreen = Screen.SearchFood }
+                        else -> {}
+                    }
+                },
+                onSnapTap = { pendingMealType = "SNACK"; currentScreen = Screen.AiScan },
+                onSubscription = { currentScreen = Screen.Paywall },
                 onLogout = { currentScreen = Screen.Welcome }
             )
         }

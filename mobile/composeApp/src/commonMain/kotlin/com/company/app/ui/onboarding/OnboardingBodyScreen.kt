@@ -14,8 +14,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.mapNotNull
 import com.company.app.ui.components.CalSnapPrimaryButton
 import com.company.app.ui.components.CalSnapTextButton
 import com.company.app.ui.theme.*
@@ -217,22 +221,42 @@ private fun HorizontalRuler(
     val count = (max - min).toInt() + 1
     val tickWidthDp = 14.dp
     val listState = rememberLazyListState()
+    val density = LocalDensity.current
 
+    // Scroll to initial value, centered (offset = -halfTick so item center lands on viewport center)
     LaunchedEffect(Unit) {
-        listState.scrollToItem((value - min).toInt().coerceIn(0, count - 1))
+        val idx = (value - min).toInt().coerceIn(0, count - 1)
+        val halfTickPx = with(density) { (tickWidthDp / 2).roundToPx() }
+        listState.scrollToItem(idx, scrollOffset = -halfTickPx)
     }
 
+    // Real-time value update while scrolling
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo }
+            .filter { it.viewportSize.width > 0 && it.visibleItemsInfo.isNotEmpty() }
+            .mapNotNull { info ->
+                val vpCenter = info.viewportSize.width / 2
+                info.visibleItemsInfo.minByOrNull { item ->
+                    kotlin.math.abs(item.offset + item.size / 2 - vpCenter)
+                }?.index
+            }
+            .distinctUntilChanged()
+            .collect { idx ->
+                onValueChange((min + idx).coerceIn(min, max))
+            }
+    }
+
+    // Snap to nearest tick when a slow drag ends (no fling)
     LaunchedEffect(listState.isScrollInProgress) {
         if (!listState.isScrollInProgress) {
-            val vpWidth = listState.layoutInfo.viewportSize.width
-            if (vpWidth == 0) return@LaunchedEffect
-            val vpCenter = vpWidth / 2
-            val closest = listState.layoutInfo.visibleItemsInfo.minByOrNull { item ->
+            val info = listState.layoutInfo
+            if (info.viewportSize.width == 0 || info.visibleItemsInfo.isEmpty()) return@LaunchedEffect
+            val vpCenter = info.viewportSize.width / 2
+            val closest = info.visibleItemsInfo.minByOrNull { item ->
                 kotlin.math.abs(item.offset + item.size / 2 - vpCenter)
-            }
-            if (closest != null) {
-                onValueChange((min + closest.index).coerceIn(min, max))
-            }
+            } ?: return@LaunchedEffect
+            val halfTickPx = with(density) { (tickWidthDp / 2).roundToPx() }
+            listState.animateScrollToItem(closest.index, scrollOffset = -halfTickPx)
         }
     }
 
@@ -249,7 +273,7 @@ private fun HorizontalRuler(
             state = listState,
             contentPadding = PaddingValues(horizontal = halfWidth),
             flingBehavior = rememberSnapFlingBehavior(listState),
-            modifier = Modifier.height(72.dp),
+            modifier = Modifier.height(80.dp),
         ) {
             items(count) { idx ->
                 val tickVal = (min + idx).toInt()
@@ -257,17 +281,20 @@ private fun HorizontalRuler(
                 val isMedium = tickVal % 5 == 0 && !isMajor
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.width(tickWidthDp),
+                    modifier = Modifier
+                        .width(tickWidthDp)
+                        .height(80.dp),
+                    verticalArrangement = Arrangement.Top,
                 ) {
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(10.dp))
                     Box(
                         modifier = Modifier
                             .width(1.5.dp)
                             .height(
                                 when {
-                                    isMajor -> 30.dp
-                                    isMedium -> 20.dp
-                                    else -> 12.dp
+                                    isMajor -> 28.dp
+                                    isMedium -> 18.dp
+                                    else -> 10.dp
                                 }
                             )
                             .clip(RoundedCornerShape(1.dp))
@@ -280,7 +307,7 @@ private fun HorizontalRuler(
                             )
                     )
                     if (isMajor) {
-                        Spacer(Modifier.height(4.dp))
+                        Spacer(Modifier.height(6.dp))
                         Text(
                             text = tickVal.toString(),
                             style = CalSnapType.BodySmall,
@@ -291,10 +318,13 @@ private fun HorizontalRuler(
             }
         }
 
+        // Center indicator line — top-anchored with same top offset as ticks
         Box(
             modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 6.dp)
                 .width(2.dp)
-                .height(44.dp)
+                .height(46.dp)
                 .background(CalSnapColors.Red),
         )
     }
