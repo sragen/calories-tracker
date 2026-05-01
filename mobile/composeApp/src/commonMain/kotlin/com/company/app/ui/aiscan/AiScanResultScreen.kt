@@ -48,7 +48,7 @@ fun AiScanResultScreen(
     ) {
         when {
             state.isAnalyzing -> AnalyzingContent()
-            state.scanResult == null -> EmptyScanContent(onBack = onBack)
+            state.scanResult == null -> EmptyScanContent(error = state.error, onBack = onBack)
             else -> {
                 val result = state.scanResult
                 val totalKcal = state.selectedFoods.sumOf { it.totalCalories.let { c ->
@@ -187,19 +187,26 @@ private fun AnalyzingContent() {
 }
 
 @Composable
-private fun EmptyScanContent(onBack: () -> Unit) {
+private fun EmptyScanContent(error: String?, onBack: () -> Unit) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(CalSnapSpacing.md),
             modifier = Modifier.padding(CalSnapSpacing.xl),
         ) {
-            Text("📷", fontSize = 48.sp)
+            Text(if (error != null) "⚠️" else "📷", fontSize = 48.sp)
             Text(
-                text = "No scan result",
+                text = if (error != null) "Scan failed" else "No scan result",
                 style = CalSnapType.HeadlineMedium,
                 color = CalSnapColors.Ink,
             )
+            if (error != null) {
+                Text(
+                    text = error,
+                    style = CalSnapType.Body,
+                    color = CalSnapColors.Muted,
+                )
+            }
             CalSnapTextButton(text = "Go back", onClick = onBack)
         }
     }

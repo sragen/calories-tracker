@@ -1,185 +1,136 @@
 package com.company.app.ui.aiscan
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import kotlinx.cinterop.CValue
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.useContents
+import kotlinx.cinterop.usePinned
+import platform.CoreGraphics.CGSize
+import platform.CoreGraphics.CGSizeMake
+import platform.Foundation.NSData
+import platform.UIKit.*
+import platform.darwin.NSObject
+import platform.posix.memcpy
 
-// iOS camera integration via UIImagePickerController is wired in the Swift layer.
-// This Compose screen displays a styled dark overlay while the native picker is active,
-// or a gallery-pick fallback button if the picker is unavailable.
+// iOS camera: auto-launch UIImagePickerController the moment this screen enters.
+// UIImagePickerControllerDelegateProtocol uses required ObjC methods — fully
+// compatible with Kotlin/Native (unlike AVCapturePhotoCaptureDelegate which is
+// all-optional and cannot be overridden from Kotlin).
+@OptIn(ExperimentalForeignApi::class)
 @Composable
 actual fun AiScanScreen(
     onPhotoCaptured: (ByteArray) -> Unit,
     onBack: () -> Unit,
 ) {
-    val scanLineAnim = rememberInfiniteTransition(label = "scanLine")
-    val scanLineY by scanLineAnim.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "scanLineY",
-    )
+    val currentOnPhotoCaptured by rememberUpdatedState(onPhotoCaptured)
+    val currentOnBack by rememberUpdatedState(onBack)
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black),
-    ) {
-        // Top scrim
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.15f)
-                .background(Color.Black.copy(alpha = 0.55f)),
+    // Hold delegate in state to keep it alive for the duration of the session.
+    var pickerDelegate by remember { mutableStateOf<CameraPickerDelegate?>(null) }
+
+    LaunchedEffect(Unit) {
+        val delegate = CameraPickerDelegate(
+            onImageCaptured = { bytes -> currentOnPhotoCaptured(bytes) },
+            onCancel = { currentOnBack() },
         )
+        pickerDelegate = delegate
 
-        // Scan frame placeholder
-        BoxWithConstraints(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .padding(horizontal = 40.dp)
-                .aspectRatio(1f),
-        ) {
-            val frameSize = maxWidth
-            Box(modifier = Modifier.fillMaxSize()) {
-                // Corner brackets
-                ScanFrameCorners()
+        val vc = topViewController()
+        if (vc != null) launchPicker(vc, delegate) else currentOnBack()
+    }
 
-                // Animated scan line
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(2.dp)
-                        .offset(y = frameSize * scanLineY)
-                        .background(
-                            Brush.horizontalGradient(
-                                colors = listOf(
-                                    Color.Transparent,
-                                    Color(0xFFE63946).copy(alpha = 0.8f),
-                                    Color(0xFFE63946),
-                                    Color(0xFFE63946).copy(alpha = 0.8f),
-                                    Color.Transparent,
-                                )
-                            )
-                        ),
-                )
+    // Compose layer is hidden behind the full-screen picker.
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black))
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+@Suppress("DEPRECATION")
+private fun topViewController(): UIViewController? {
+    var vc = UIApplication.sharedApplication.keyWindow?.rootViewController
+    while (vc?.presentedViewController != null) vc = vc.presentedViewController
+    return vc
+}
+
+private fun launchPicker(presentingVC: UIViewController, delegate: CameraPickerDelegate) {
+    val picker = UIImagePickerController()
+    picker.sourceType = if (
+        UIImagePickerController.isSourceTypeAvailable(
+            UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypeCamera
+        )
+    ) {
+        UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypeCamera
+    } else {
+        UIImagePickerControllerSourceType.UIImagePickerControllerSourceTypePhotoLibrary
+    }
+    picker.allowsEditing = false
+    picker.delegate = delegate
+    presentingVC.presentViewController(picker, animated = true, completion = null)
+}
+
+// ─── Delegate ────────────────────────────────────────────────────────────────
+
+private class CameraPickerDelegate(
+    private val onImageCaptured: (ByteArray) -> Unit,
+    private val onCancel: () -> Unit,
+) : NSObject(), UIImagePickerControllerDelegateProtocol, UINavigationControllerDelegateProtocol {
+
+    @OptIn(ExperimentalForeignApi::class)
+    override fun imagePickerController(
+        picker: UIImagePickerController,
+        didFinishPickingMediaWithInfo: Map<Any?, *>,
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        val image = didFinishPickingMediaWithInfo[UIImagePickerControllerOriginalImage] as? UIImage
+        picker.dismissViewControllerAnimated(true) {
+            if (image != null) {
+                val resized = image.resizedToMaxDimension(1280.0)
+                val data = UIImageJPEGRepresentation(resized, 0.7)
+                if (data != null) onImageCaptured(data.toByteArray()) else onCancel()
+            } else {
+                onCancel()
             }
         }
+    }
 
-        // Close button
-        Box(
-            modifier = Modifier
-                .statusBarsPadding()
-                .padding(16.dp)
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.4f))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onBack,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("✕", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.W600)
-        }
+    override fun imagePickerControllerDidCancel(picker: UIImagePickerController) {
+        picker.dismissViewControllerAnimated(true) { onCancel() }
+    }
+}
 
-        // Hint
-        Box(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .padding(top = 260.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(Color.Black.copy(alpha = 0.45f))
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-            ) {
-                Text(
-                    text = "Point at your food",
-                    color = Color.White,
-                    fontSize = 13.sp,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
-
-        // Bottom controls
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(bottom = 40.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Text(
-                text = "Camera coming to iOS — use gallery for now",
-                color = Color.White.copy(alpha = 0.6f),
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 32.dp),
-            )
-            // Shutter placeholder — wired to native UIImagePickerController by the Swift host
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.25f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(Color.White),
-                )
-            }
+@OptIn(ExperimentalForeignApi::class)
+private fun NSData.toByteArray(): ByteArray {
+    val length = this.length.toInt()
+    if (length == 0) return ByteArray(0)
+    return ByteArray(length).also { array ->
+        array.usePinned { pinned ->
+            memcpy(pinned.addressOf(0), this.bytes, this.length)
         }
     }
 }
 
-@Composable
-private fun ScanFrameCorners() {
-    val white = Color.White
-    val cornerLen = 28.dp
-    val strokeW = 3.dp
+// Downscale so the longest edge is <= maxDimension (preserves aspect ratio).
+// Keeps payload well under the backend 10MB multipart cap and speeds up Gemini.
+@OptIn(ExperimentalForeignApi::class)
+private fun UIImage.resizedToMaxDimension(maxDimension: Double): UIImage {
+    val w = this.size.useContents { width }
+    val h = this.size.useContents { height }
+    val longest = maxOf(w, h)
+    if (longest <= maxDimension) return this
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Box(modifier = Modifier.align(Alignment.TopStart)) {
-            Box(Modifier.width(cornerLen).height(strokeW).background(white))
-            Box(Modifier.width(strokeW).height(cornerLen).background(white))
-        }
-        Box(modifier = Modifier.align(Alignment.TopEnd)) {
-            Box(Modifier.width(cornerLen).height(strokeW).align(Alignment.TopEnd).background(white))
-            Box(Modifier.width(strokeW).height(cornerLen).align(Alignment.TopEnd).background(white))
-        }
-        Box(modifier = Modifier.align(Alignment.BottomStart)) {
-            Box(Modifier.width(cornerLen).height(strokeW).align(Alignment.BottomStart).background(white))
-            Box(Modifier.width(strokeW).height(cornerLen).align(Alignment.BottomStart).background(white))
-        }
-        Box(modifier = Modifier.align(Alignment.BottomEnd)) {
-            Box(Modifier.width(cornerLen).height(strokeW).align(Alignment.BottomEnd).background(white))
-            Box(Modifier.width(strokeW).height(cornerLen).align(Alignment.BottomEnd).background(white))
-        }
-    }
+    val scale = maxDimension / longest
+    val newSize: CValue<CGSize> = CGSizeMake(w * scale, h * scale)
+
+    UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+    this.drawInRect(
+        platform.CoreGraphics.CGRectMake(0.0, 0.0, w * scale, h * scale)
+    )
+    val resized = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+    return resized ?: this
 }
