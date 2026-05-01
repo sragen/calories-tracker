@@ -52,6 +52,11 @@ private fun AppContent() {
     val guestStorage: GuestStorage = koinInject()
     val scope = rememberCoroutineScope()
 
+    // Hoisted because AiScan screen kicks off analyze() and AiScanResult reads
+    // its state — Koin binds AiScanViewModel as `factory`, so injecting in each
+    // screen would yield two separate instances and lose in-flight state.
+    val aiScanViewModel: AiScanViewModel = koinInject()
+
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Welcome) }
     var isGuestMode by remember { mutableStateOf(false) }
     var guestScansRemaining by remember { mutableStateOf(GuestStorage.SCAN_LIMIT) }
@@ -185,14 +190,13 @@ private fun AppContent() {
                 // Trial exhausted — show paywall before opening camera
                 currentScreen = Screen.Paywall
             } else {
-                val viewModel: AiScanViewModel = koinInject()
                 AiScanScreen(
                     onPhotoCaptured = { bytes ->
                         pendingAiImageBytes = bytes
                         if (isGuestMode) {
                             scope.launch { guestStorage.decrementScan() }
                         }
-                        viewModel.analyze(bytes)
+                        aiScanViewModel.analyze(bytes)
                         currentScreen = Screen.AiScanResult
                     },
                     onBack = {
@@ -202,9 +206,8 @@ private fun AppContent() {
             }
         }
         Screen.AiScanResult -> {
-            val viewModel: AiScanViewModel = koinInject()
             AiScanResultScreen(
-                viewModel = viewModel,
+                viewModel = aiScanViewModel,
                 mealType = pendingMealType,
                 isGuestMode = isGuestMode,
                 onConfirmed = { currentScreen = Screen.Home },
