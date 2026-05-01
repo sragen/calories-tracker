@@ -63,25 +63,29 @@ class GeminiService(
                     )
                 )
             ),
+            // responseMimeType forces Gemini to emit pure JSON — no ```json fences.
+            // 4096 tokens accommodates Gemini 2.5's reasoning tokens before final output.
             "generationConfig" to mapOf(
                 "temperature" to 0.1,
-                "maxOutputTokens" to 1024
+                "maxOutputTokens" to 4096,
+                "responseMimeType" to "application/json"
             )
         )
 
+        var rawText: String? = null
         return try {
             val response = restClient.post()
-                .uri("/gemini-2.5-flash:generateContent?key=$apiKey")
+                .uri("/gemini-2.5-pro:generateContent?key=$apiKey")
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(requestBody)
                 .retrieve()
                 .body(GeminiResponse::class.java)
 
-            val text = response?.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "[]"
-            val cleaned = text.trim().removePrefix("```json").removeSuffix("```").trim()
+            rawText = response?.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+            val cleaned = (rawText ?: "[]").trim().removePrefix("```json").removeSuffix("```").trim()
             objectMapper.readValue(cleaned, objectMapper.typeFactory.constructCollectionType(List::class.java, DetectedFoodRaw::class.java))
         } catch (e: Exception) {
-            log.error("Gemini analysis failed: ${e.message}")
+            log.error("Gemini analysis failed: ${e.message} | raw response text: ${rawText?.take(500)}")
             emptyList()
         }
     }
