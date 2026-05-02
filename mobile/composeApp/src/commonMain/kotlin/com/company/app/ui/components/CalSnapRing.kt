@@ -1,9 +1,13 @@
 package com.company.app.ui.components
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -33,13 +37,20 @@ fun CalSnapRing(
     strokeWidth: Dp = 14.dp,
     color: Color = CalSnapColors.Ink,
     track: Color = CalSnapColors.Divider,
+    animate: Boolean = true,
     content: @Composable () -> Unit = {},
 ) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier.size(size),
     ) {
-        val clampedProgress = progress.coerceIn(0f, 1f)
+        val target = progress.coerceIn(0f, 1f)
+        val animated by animateFloatAsState(
+            targetValue = target,
+            animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing),
+            label = "ringSweep",
+        )
+        val clampedProgress = if (animate) animated else target
         Canvas(modifier = Modifier.size(size)) {
             val stroke = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
             val inset = strokeWidth.toPx() / 2f

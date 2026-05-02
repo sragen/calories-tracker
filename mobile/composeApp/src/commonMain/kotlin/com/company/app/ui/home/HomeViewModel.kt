@@ -17,6 +17,7 @@ data class HomeState(
     val isLoading: Boolean = true,
     val diary: DailySummary? = null,
     val streak: Int = 0,
+    val userName: String? = null,
     val error: String? = null,
     val isLoggedOut: Boolean = false,
     val deletingId: Long? = null
@@ -31,17 +32,28 @@ class HomeViewModel(
     private val _state = MutableStateFlow(HomeState())
     val state: StateFlow<HomeState> = _state
 
-    init { loadDiary() }
+    init {
+        loadDiary()
+        loadUser()
+    }
 
     fun loadDiary() {
         val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
-        _state.value = HomeState(isLoading = true)
+        _state.value = _state.value.copy(isLoading = true, error = null, deletingId = null)
         scope.launch {
             val diaryResult = mealLogRepo.getDiary(today)
             val streak = mealLogRepo.getStreak().getOrDefault(0)
             diaryResult
-                .onSuccess { _state.value = HomeState(isLoading = false, diary = it, streak = streak) }
-                .onFailure { _state.value = HomeState(isLoading = false, error = it.message, streak = streak) }
+                .onSuccess { _state.value = _state.value.copy(isLoading = false, diary = it, streak = streak) }
+                .onFailure { _state.value = _state.value.copy(isLoading = false, error = it.message, streak = streak) }
+        }
+    }
+
+    private fun loadUser() {
+        scope.launch {
+            authRepo.getMe().onSuccess { user ->
+                _state.value = _state.value.copy(userName = user.name)
+            }
         }
     }
 

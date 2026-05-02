@@ -36,6 +36,15 @@ class AuthRepository(
             Result.failure(e)
         }
 
+    suspend fun getMe(): Result<UserResponse> =
+        try {
+            Result.success(api.getMe())
+        } catch (e: ResponseException) {
+            Result.failure(Exception(e.extractMessage()))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
     suspend fun logout() = storage.clearTokens()
 
     suspend fun isLoggedIn(): Boolean = storage.accessToken.firstOrNull() != null

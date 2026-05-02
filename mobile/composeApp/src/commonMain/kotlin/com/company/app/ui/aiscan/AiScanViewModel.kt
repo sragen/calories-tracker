@@ -5,7 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.company.app.shared.data.model.AiDetectedFood
 import com.company.app.shared.data.model.AiScanResponse
+import com.company.app.shared.data.model.DailyGoalResponse
 import com.company.app.shared.data.repository.AiScanRepository
+import com.company.app.shared.data.repository.DailyGoalRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -16,20 +18,31 @@ data class AiScanState(
     val selectedFoods: List<AiDetectedFood> = emptyList(),
     val isConfirming: Boolean = false,
     val error: String? = null,
-    val confirmed: Boolean = false
+    val confirmed: Boolean = false,
+    val imageBytes: ByteArray? = null,
+    val goal: DailyGoalResponse? = null,
 )
 
-class AiScanViewModel(private val aiScanRepo: AiScanRepository) {
+class AiScanViewModel(
+    private val aiScanRepo: AiScanRepository,
+    private val goalRepo: DailyGoalRepository,
+) {
 
     var state by mutableStateOf(AiScanState())
         private set
 
     private val scope = CoroutineScope(Dispatchers.Main)
 
+    init { loadGoal() }
+
+    private fun loadGoal() {
+        scope.launch {
+            goalRepo.get().onSuccess { state = state.copy(goal = it) }
+        }
+    }
+
     fun analyze(imageBytes: ByteArray, mimeType: String = "image/jpeg") {
-        // Full reset — ViewModel is shared across scans, so leftover `confirmed`
-        // or `selectedFoods` from a prior scan would otherwise leak into this one.
-        state = AiScanState(isAnalyzing = true)
+        state = AiScanState(isAnalyzing = true, imageBytes = imageBytes, goal = state.goal)
         scope.launch {
             aiScanRepo.analyze(imageBytes, mimeType).fold(
                 onSuccess = { result ->

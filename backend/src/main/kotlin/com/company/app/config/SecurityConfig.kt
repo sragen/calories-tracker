@@ -31,6 +31,7 @@ class SecurityConfig(private val jwtFilter: JwtFilter) {
             auth.requestMatchers(
                 "/api/auth/**",
                 "/api/config",
+                "/api/subscription/plans",     // public price list for paywall
                 "/api/webhook/**",             // IAP webhooks (Google Play / App Store) — no JWT
                 "/actuator/health",
                 "/swagger-ui/**",

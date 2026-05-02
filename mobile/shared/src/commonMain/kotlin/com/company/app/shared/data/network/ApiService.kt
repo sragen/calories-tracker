@@ -147,6 +147,9 @@ class ApiService(
 
     // ── Subscriptions (IAP) ───────────────────────────────────────
 
+    suspend fun getSubscriptionPlans(): List<SubscriptionPlanResponse> =
+        client.get("$baseUrl/api/subscription/plans").body()
+
     suspend fun getEntitlement(): EntitlementResponse =
         client.get("$baseUrl/api/subscription/entitlement") { auth() }.body()
 

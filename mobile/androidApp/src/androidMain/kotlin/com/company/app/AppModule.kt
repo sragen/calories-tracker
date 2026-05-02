@@ -72,8 +72,8 @@ val appModule = module {
     factory { HomeViewModel(get(), get()) }
     factory { SearchFoodViewModel(get(), get()) }
     factory { SubmitFoodViewModel(get()) }
-    factory { ProfileViewModel(get(), get(), get(), get()) }
-    factory { AiScanViewModel(get()) }
-    factory { SubscriptionViewModel(get<BillingRepository>()) }
-    factory { AnalyticsViewModel(get(), get()) }
+    factory { ProfileViewModel(get(), get(), get(), get(), get()) }
+    factory { AiScanViewModel(get(), get()) }
+    factory { SubscriptionViewModel(get<BillingRepository>(), get()) }
+    factory { AnalyticsViewModel(get(), get(), get()) }
 }

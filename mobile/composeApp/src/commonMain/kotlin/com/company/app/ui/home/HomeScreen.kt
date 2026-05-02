@@ -1,7 +1,12 @@
 package com.company.app.ui.home
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,19 +20,29 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.company.app.shared.data.model.DailySummary
 import com.company.app.shared.data.model.MealLogEntry
 import com.company.app.shared.data.model.NutritionSummary
 import com.company.app.ui.components.*
+import com.company.app.ui.platform.rememberHapticFeedback
 import com.company.app.ui.theme.*
+import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.math.roundToInt
 
 @Composable
 fun HomeScreen(
@@ -81,6 +96,7 @@ fun HomeScreen(
                 HomeContent(
                     diary = state.diary!!,
                     streak = state.streak,
+                    userName = state.userName,
                     deletingId = state.deletingId,
                     onAddFood = onAddFood,
                     onAiScan = onAiScan,
@@ -110,6 +126,7 @@ fun HomeScreen(
 private fun HomeContent(
     diary: DailySummary,
     streak: Int,
+    userName: String?,
     deletingId: Long?,
     onAddFood: (String) -> Unit,
     onAiScan: (String) -> Unit,
@@ -120,7 +137,7 @@ private fun HomeContent(
         contentPadding = PaddingValues(bottom = 100.dp),
     ) {
         item {
-            HomeTopBar(streak = streak, onProfile = onProfile)
+            HomeTopBar(streak = streak, userName = userName, onProfile = onProfile)
         }
         item {
             CalorieDashboardCard(
@@ -158,7 +175,13 @@ private fun HomeContent(
 // ─── Header ─────────────────────────────────────────────────────────────────
 
 @Composable
-private fun HomeTopBar(streak: Int, onProfile: () -> Unit) {
+private fun HomeTopBar(streak: Int, userName: String?, onProfile: () -> Unit) {
+    val now = remember { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) }
+    val dayLabel = remember(now) { dayOfWeekLabel(now.dayOfWeek) }
+    val firstName = remember(userName) { userName?.trim()?.takeIf { it.isNotEmpty() }?.split(' ')?.first() }
+    val greeting = remember(now, firstName) { greetingFor(now.hour, firstName) }
+    val initial = remember(firstName) { firstName?.firstOrNull()?.uppercaseChar()?.toString() ?: "?" }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -186,7 +209,7 @@ private fun HomeTopBar(streak: Int, onProfile: () -> Unit) {
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = "S",
+                text = initial,
                 color = Color.White,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.W700,
@@ -195,16 +218,18 @@ private fun HomeTopBar(streak: Int, onProfile: () -> Unit) {
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Today",
+                text = dayLabel,
                 style = CalSnapType.BodySmall,
                 color = CalSnapColors.Muted,
             )
             Text(
-                text = "Hey there 👋",
+                text = greeting,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.W700,
                 color = CalSnapColors.Ink,
                 letterSpacing = (-0.4).sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
 
@@ -227,6 +252,28 @@ private fun HomeTopBar(streak: Int, onProfile: () -> Unit) {
             }
         }
     }
+}
+
+private fun dayOfWeekLabel(day: DayOfWeek): String = when (day) {
+    DayOfWeek.MONDAY -> "Monday"
+    DayOfWeek.TUESDAY -> "Tuesday"
+    DayOfWeek.WEDNESDAY -> "Wednesday"
+    DayOfWeek.THURSDAY -> "Thursday"
+    DayOfWeek.FRIDAY -> "Friday"
+    DayOfWeek.SATURDAY -> "Saturday"
+    DayOfWeek.SUNDAY -> "Sunday"
+    else -> "Today"
+}
+
+private fun greetingFor(hour: Int, firstName: String?): String {
+    val prefix = when (hour) {
+        in 5..11 -> "Good morning"
+        in 12..16 -> "Good afternoon"
+        in 17..20 -> "Good evening"
+        else -> "Good night"
+    }
+    val who = firstName ?: "there"
+    return "$prefix, $who 👋"
 }
 
 // ─── Calorie dashboard card ──────────────────────────────────────────────────
@@ -499,53 +546,118 @@ private fun MealRowItem(
     onDelete: () -> Unit,
 ) {
     val mealLabel = mealType.lowercase().replaceFirstChar { it.uppercase() }
+    val haptic = rememberHapticFeedback()
+    val density = LocalDensity.current
+    val revealWidth = 88.dp
+    val revealPx = with(density) { revealWidth.toPx() }
+    val offsetX = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
 
-    Row(
+    LaunchedEffect(isDeleting) {
+        if (isDeleting && offsetX.value != -revealPx) {
+            offsetX.animateTo(-revealPx, spring(dampingRatio = 0.85f, stiffness = 600f))
+        }
+    }
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(vertical = 4.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .clipToBounds(),
     ) {
-        CalSnapFoodPhoto(
-            name = entry.foodItem.name,
-            size = 48.dp,
-            cornerRadius = 12.dp,
-        )
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = entry.foodItem.name,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.W600,
-                color = CalSnapColors.Ink,
-                letterSpacing = (-0.2).sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = "$mealLabel · ${entry.quantityG.toInt()}g",
-                fontSize = 12.sp,
-                color = CalSnapColors.Muted,
-                modifier = Modifier.padding(top = 2.dp),
-            )
+        Row(
+            modifier = Modifier.matchParentSize(),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(revealWidth)
+                    .fillMaxHeight()
+                    .background(CalSnapColors.Red)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        enabled = !isDeleting,
+                    ) {
+                        haptic.medium()
+                        onDelete()
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                if (isDeleting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = Color.White,
+                    )
+                } else {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        CalSnapIcon(name = "trash", size = 18.dp, color = Color.White, strokeWidth = 2f)
+                        Text(
+                            text = "Delete",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.W600,
+                        )
+                    }
+                }
+            }
         }
 
-        if (isDeleting) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(20.dp),
-                strokeWidth = 2.dp,
-                color = CalSnapColors.Red,
+        Row(
+            modifier = Modifier
+                .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                .fillMaxWidth()
+                .background(CalSnapColors.Background)
+                .draggable(
+                    enabled = !isDeleting,
+                    orientation = Orientation.Horizontal,
+                    state = rememberDraggableState { delta ->
+                        scope.launch {
+                            offsetX.snapTo((offsetX.value + delta).coerceIn(-revealPx, 0f))
+                        }
+                    },
+                    onDragStopped = { velocity ->
+                        val target = if (offsetX.value < -revealPx / 2 || velocity < -400f) -revealPx else 0f
+                        offsetX.animateTo(
+                            targetValue = target,
+                            animationSpec = spring(dampingRatio = 0.85f, stiffness = 400f),
+                        )
+                    },
+                )
+                .padding(vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            CalSnapFoodPhoto(
+                name = entry.foodItem.name,
+                size = 48.dp,
+                cornerRadius = 12.dp,
             )
-        } else {
-            Column(
-                horizontalAlignment = Alignment.End,
-                modifier = Modifier.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onDelete,
-                ),
-            ) {
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = entry.foodItem.name,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.W600,
+                    color = CalSnapColors.Ink,
+                    letterSpacing = (-0.2).sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = "$mealLabel · ${entry.quantityG.toInt()}g",
+                    fontSize = 12.sp,
+                    color = CalSnapColors.Muted,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = "${entry.calories.toInt()}",
                     fontSize = 15.sp,

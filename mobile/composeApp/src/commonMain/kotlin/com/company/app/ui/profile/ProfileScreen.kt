@@ -71,9 +71,17 @@ fun ProfileScreen(
                             .padding(horizontal = CalSnapSpacing.screenPad),
                         verticalArrangement = Arrangement.spacedBy(0.dp),
                     ) {
-                        UserCard(streak = streak)
+                        UserCard(
+                            name = state.userName,
+                            email = state.userEmail,
+                            streak = state.streak,
+                        )
                         Spacer(Modifier.height(12.dp))
-                        MiniStatsRow(goal = state.goal)
+                        MiniStatsRow(
+                            activeDays = state.activeDays,
+                            avgKcal = state.avgKcal,
+                            streak = state.streak,
+                        )
                         Spacer(Modifier.height(22.dp))
                         AccountSection(profile = state.profile, goal = state.goal)
                         Spacer(Modifier.height(22.dp))
@@ -122,7 +130,8 @@ private fun ProfilePageHeader() {
 // ─── User card ───────────────────────────────────────────────────────────────
 
 @Composable
-private fun UserCard(streak: Int) {
+private fun UserCard(name: String?, email: String?, streak: Int) {
+    val initial = name?.trim()?.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -147,7 +156,7 @@ private fun UserCard(streak: Int) {
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = "S",
+                text = initial,
                 color = Color.White,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.W700,
@@ -156,12 +165,20 @@ private fun UserCard(streak: Int) {
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "My Profile",
+                text = name ?: "—",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.W700,
                 color = CalSnapColors.Ink,
                 letterSpacing = (-0.3).sp,
             )
+            if (!email.isNullOrBlank()) {
+                Text(
+                    text = email,
+                    fontSize = 13.sp,
+                    color = CalSnapColors.Muted,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
             if (streak >= 1) {
                 Spacer(Modifier.height(6.dp))
                 Row(
@@ -172,7 +189,7 @@ private fun UserCard(streak: Int) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    CalSnapIcon(name = "streak", size = 11.dp, color = CalSnapColors.Red, strokeWidth = 2.4f)
+                    CalSnapIcon(name = "flame", size = 11.dp, color = CalSnapColors.Red, strokeWidth = 2.4f)
                     Text(
                         text = "$streak-day streak",
                         color = CalSnapColors.Red,
@@ -188,31 +205,34 @@ private fun UserCard(streak: Int) {
 // ─── Mini stats ──────────────────────────────────────────────────────────────
 
 @Composable
-private fun MiniStatsRow(goal: DailyGoalResponse?) {
+private fun MiniStatsRow(activeDays: Int, avgKcal: Int, streak: Int) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         MiniStatCard(
-            label = "Target",
-            value = goal?.targetCalories?.toInt()?.toString() ?: "—",
+            label = "Active",
+            value = "$activeDays",
+            unit = "of 7 days",
+            modifier = Modifier.weight(1f),
+        )
+        MiniStatCard(
+            label = "Avg",
+            value = if (avgKcal > 0) formatThousands(avgKcal) else "—",
             unit = "kcal",
             modifier = Modifier.weight(1f),
         )
         MiniStatCard(
-            label = "Protein",
-            value = goal?.targetProteinG?.toInt()?.toString() ?: "—",
-            unit = "g/day",
-            modifier = Modifier.weight(1f),
-        )
-        MiniStatCard(
-            label = "Fat",
-            value = goal?.targetFatG?.toInt()?.toString() ?: "—",
-            unit = "g/day",
+            label = "Streak",
+            value = "$streak",
+            unit = if (streak == 1) "day" else "days",
             modifier = Modifier.weight(1f),
         )
     }
 }
+
+private fun formatThousands(n: Int): String =
+    if (n >= 1000) "${n / 1000},${(n % 1000).toString().padStart(3, '0')}" else n.toString()
 
 @Composable
 private fun MiniStatCard(label: String, value: String, unit: String, modifier: Modifier = Modifier) {

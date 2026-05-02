@@ -214,6 +214,7 @@ private fun AppContent() {
                 onBack = {
                     currentScreen = if (isGuestMode) Screen.Welcome else Screen.Home
                 },
+                onReSnap = { currentScreen = Screen.AiScan },
                 onRegisterFromGuest = {
                     isGuestMode = false
                     currentScreen = Screen.Register

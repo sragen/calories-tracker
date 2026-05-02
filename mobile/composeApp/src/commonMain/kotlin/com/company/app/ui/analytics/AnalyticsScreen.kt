@@ -1,5 +1,8 @@
 package com.company.app.ui.analytics
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,21 +18,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.company.app.shared.data.model.DailyRangeSummary
-import com.company.app.ui.components.CalSnapBrandButton
 import com.company.app.ui.components.CalSnapBottomTabBar
+import com.company.app.ui.components.CalSnapBrandButton
 import com.company.app.ui.components.CalSnapIcon
 import com.company.app.ui.components.CalSnapTab
 import com.company.app.ui.theme.*
+import kotlin.math.roundToInt
 
 @Composable
 fun AnalyticsScreen(
@@ -54,61 +58,48 @@ fun AnalyticsScreen(
                 )
             }
             !state.isPremium -> {
-                PremiumGate(onUpgrade = onUpgrade)
+                Column {
+                    StatsHeader()
+                    PremiumGate(onUpgrade = onUpgrade)
+                }
             }
             else -> {
-                LazyColumn(
-                    contentPadding = PaddingValues(bottom = 100.dp),
-                ) {
-                    item { StatsHeader(onRefresh = viewModel::refresh) }
-
+                LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
+                    item { StatsHeader() }
                     item {
-                        Spacer(Modifier.height(CalSnapSpacing.sm))
-                        WeeklyCalorieChart(
+                        Spacer(Modifier.height(4.dp))
+                        DailyAverageCard(
                             data = state.weeklyData,
+                            avgCalories = state.avgCalories,
+                            goalCalories = state.targetCalories,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = CalSnapSpacing.screenPad),
+                                .padding(horizontal = 20.dp),
                         )
                     }
-
                     item {
-                        Spacer(Modifier.height(CalSnapSpacing.md))
-                        AverageMacrosCard(
-                            calories = state.avgCalories,
-                            protein = state.avgProtein,
-                            carbs = state.avgCarbs,
-                            fat = state.avgFat,
+                        Spacer(Modifier.height(14.dp))
+                        MacroSplitCard(
+                            avgProtein = state.avgProtein,
+                            avgCarbs = state.avgCarbs,
+                            avgFat = state.avgFat,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = CalSnapSpacing.screenPad),
+                                .padding(horizontal = 20.dp),
                         )
                     }
-
-                    if (state.weeklyData.isNotEmpty()) {
-                        item {
-                            Spacer(Modifier.height(CalSnapSpacing.md))
-                            MacroBreakdownBars(
-                                data = state.weeklyData,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = CalSnapSpacing.screenPad),
-                            )
-                        }
-                    }
-
                     state.error?.let {
                         item {
-                            Spacer(Modifier.height(CalSnapSpacing.sm))
+                            Spacer(Modifier.height(8.dp))
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = CalSnapSpacing.screenPad)
-                                    .clip(RoundedCornerShape(CalSnapRadius.md))
+                                    .padding(horizontal = 20.dp)
+                                    .clip(RoundedCornerShape(12.dp))
                                     .background(CalSnapColors.RedSoft)
-                                    .padding(CalSnapSpacing.md),
+                                    .padding(12.dp),
                             ) {
-                                Text(it, style = CalSnapType.Body, color = CalSnapColors.Red)
+                                Text(it, fontSize = 13.sp, color = CalSnapColors.Red)
                             }
                         }
                     }
@@ -128,17 +119,12 @@ fun AnalyticsScreen(
 }
 
 @Composable
-private fun StatsHeader(onRefresh: () -> Unit) {
-    var selectedPeriod by remember { mutableStateOf(0) }
-    val periods = listOf("W", "M", "Y")
-
-    Row(
+private fun StatsHeader() {
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = CalSnapSpacing.screenPad)
+            .padding(horizontal = 20.dp)
             .padding(top = 60.dp, bottom = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
             text = "Stats",
@@ -147,311 +133,339 @@ private fun StatsHeader(onRefresh: () -> Unit) {
             color = CalSnapColors.Ink,
             letterSpacing = (-0.6).sp,
         )
-
-        Row(
-            modifier = Modifier
-                .clip(RoundedCornerShape(10.dp))
-                .background(CalSnapColors.SurfaceAlt)
-                .padding(3.dp),
-            horizontalArrangement = Arrangement.spacedBy(0.dp),
-        ) {
-            periods.forEachIndexed { i, label ->
-                val selected = i == selectedPeriod
-                Box(
-                    modifier = Modifier
-                        .size(width = 32.dp, height = 28.dp)
-                        .then(
-                            if (selected) Modifier.shadow(
-                                elevation = 2.dp,
-                                shape = RoundedCornerShape(8.dp),
-                                ambientColor = Color.Black.copy(alpha = 0.1f),
-                                spotColor = Color.Black.copy(alpha = 0.1f),
-                            ) else Modifier
-                        )
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (selected) CalSnapColors.Background else Color.Transparent)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = {
-                                selectedPeriod = i
-                                onRefresh()
-                            },
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = label,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.W700,
-                        color = if (selected) CalSnapColors.Ink else CalSnapColors.Muted,
-                    )
-                }
-            }
-        }
     }
 }
 
+// ─── Daily Average card ─────────────────────────────────────────────────────
+
 @Composable
-private fun WeeklyCalorieChart(
+private fun DailyAverageCard(
     data: List<DailyRangeSummary>,
+    avgCalories: Double,
+    goalCalories: Double,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .shadow(elevation = 4.dp, shape = RoundedCornerShape(CalSnapRadius.card), ambientColor = Color(0x0A140F08), spotColor = Color(0x0F140F08))
-            .clip(RoundedCornerShape(CalSnapRadius.card))
-            .background(CalSnapColors.Background)
-            .padding(CalSnapSpacing.cardPad),
-    ) {
-        Text("CALORIES — LAST 7 DAYS", style = CalSnapType.Label, color = CalSnapColors.Muted)
-        Spacer(Modifier.height(CalSnapSpacing.md))
-
-        if (data.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "No data logged yet",
-                    style = CalSnapType.Body,
-                    color = CalSnapColors.Hint,
-                )
-            }
-        } else {
-            val maxCal = data.maxOf { it.totalCalories }.coerceAtLeast(500.0)
-            val inkColor = CalSnapColors.Ink
-            val dividerColor = CalSnapColors.Divider
-
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(140.dp),
-            ) {
-                val chartH = size.height - 24.dp.toPx()
-                val slotW = size.width / data.size
-                val barW = slotW * 0.5f
-                val gap = (slotW - barW) / 2f
-
-                // 3 horizontal grid lines
-                repeat(3) { i ->
-                    val y = chartH * (1f - (i + 1) / 3f)
-                    drawLine(
-                        color = dividerColor,
-                        start = Offset(0f, y),
-                        end = Offset(size.width, y),
-                        strokeWidth = 1f,
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 4f)),
-                    )
-                }
-
-                data.forEachIndexed { idx, day ->
-                    val barH = (day.totalCalories / maxCal * chartH).toFloat().coerceAtLeast(4f)
-                    val x = idx * slotW + gap
-                    val y = chartH - barH
-                    drawRoundRect(
-                        color = inkColor,
-                        topLeft = Offset(x, y),
-                        size = Size(barW, barH),
-                        cornerRadius = CornerRadius(4.dp.toPx()),
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround,
-            ) {
-                data.forEach { day ->
-                    Text(
-                        text = day.date.takeLast(5),
-                        style = CalSnapType.Label,
-                        color = CalSnapColors.Muted,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AverageMacrosCard(
-    calories: Double,
-    protein: Double,
-    carbs: Double,
-    fat: Double,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .shadow(elevation = 4.dp, shape = RoundedCornerShape(CalSnapRadius.card), ambientColor = Color(0x0A140F08), spotColor = Color(0x0F140F08))
-            .clip(RoundedCornerShape(CalSnapRadius.card))
-            .background(CalSnapColors.Background)
-            .padding(CalSnapSpacing.cardPad),
-    ) {
-        Text("DAILY AVERAGE", style = CalSnapType.Label, color = CalSnapColors.Muted)
-        Spacer(Modifier.height(CalSnapSpacing.md))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            AvgCell(value = "${calories.toInt()}", unit = "kcal", label = "Calories", color = CalSnapColors.Ink)
-            CellDivider()
-            AvgCell(value = "${protein.toInt()}g", unit = "", label = "Protein", color = CalSnapColors.Protein)
-            CellDivider()
-            AvgCell(value = "${carbs.toInt()}g", unit = "", label = "Carbs", color = CalSnapColors.Carb)
-            CellDivider()
-            AvgCell(value = "${fat.toInt()}g", unit = "", label = "Fat", color = CalSnapColors.Fat)
-        }
-    }
-}
-
-@Composable
-private fun MacroBreakdownBars(
-    data: List<DailyRangeSummary>,
-    modifier: Modifier = Modifier,
-) {
-    val avgProtein = if (data.isEmpty()) 0.0 else data.sumOf { it.totalProteinG } / data.size
-    val avgCarbs = if (data.isEmpty()) 0.0 else data.sumOf { it.totalCarbsG } / data.size
-    val avgFat = if (data.isEmpty()) 0.0 else data.sumOf { it.totalFatG } / data.size
-    val total = (avgProtein + avgCarbs + avgFat).coerceAtLeast(1.0)
+    val pctOfGoal = if (goalCalories > 0) (avgCalories / goalCalories * 100).roundToInt() else 0
 
     Column(
         modifier = modifier
-            .shadow(elevation = 4.dp, shape = RoundedCornerShape(CalSnapRadius.card), ambientColor = Color(0x0A140F08), spotColor = Color(0x0F140F08))
-            .clip(RoundedCornerShape(CalSnapRadius.card))
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(22.dp),
+                ambientColor = Color(0x0A140F08),
+                spotColor = Color(0x10140F08),
+            )
+            .clip(RoundedCornerShape(22.dp))
             .background(CalSnapColors.Background)
-            .padding(CalSnapSpacing.cardPad),
-        verticalArrangement = Arrangement.spacedBy(CalSnapSpacing.md),
-    ) {
-        Text("MACRO SPLIT", style = CalSnapType.Label, color = CalSnapColors.Muted)
-
-        MacroSplitBar("Protein", avgProtein, total, CalSnapColors.Protein)
-        MacroSplitBar("Carbs", avgCarbs, total, CalSnapColors.Carb)
-        MacroSplitBar("Fat", avgFat, total, CalSnapColors.Fat)
-    }
-}
-
-@Composable
-private fun MacroSplitBar(
-    label: String,
-    value: Double,
-    total: Double,
-    color: androidx.compose.ui.graphics.Color,
-) {
-    val pct = ((value / total) * 100).toInt()
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(CalSnapSpacing.sm),
+            .padding(18.dp),
     ) {
         Text(
-            text = label,
-            style = CalSnapType.BodySmall,
+            text = "DAILY AVERAGE",
+            fontSize = 12.sp,
             color = CalSnapColors.Muted,
-            modifier = Modifier.width(52.dp),
+            fontWeight = FontWeight.W600,
+            letterSpacing = 0.6.sp,
         )
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(top = 4.dp),
+        ) {
+            Text(
+                text = formatThousands(avgCalories.roundToInt()),
+                fontSize = 40.sp,
+                fontWeight = FontWeight.W700,
+                color = CalSnapColors.Ink,
+                letterSpacing = (-1.5).sp,
+                lineHeight = 40.sp,
+            )
+            Text(
+                text = "kcal · $pctOfGoal% of goal",
+                fontSize = 13.sp,
+                color = CalSnapColors.Muted,
+                modifier = Modifier.padding(bottom = 6.dp),
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
+        WeeklyBarChart(
+            data = data,
+            goalKcal = goalCalories,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(140.dp),
+        )
+    }
+}
+
+@Composable
+private fun WeeklyBarChart(
+    data: List<DailyRangeSummary>,
+    goalKcal: Double,
+    modifier: Modifier = Modifier,
+) {
+    val days = listOf("M", "T", "W", "T", "F", "S", "S")
+    val padded = (0 until 7).map { i -> data.getOrNull(i)?.totalCalories ?: 0.0 }
+    val maxVal = (padded + goalKcal).max() * 1.1
+    val todayIdx = padded.indexOfLast { it > 0 }.coerceAtLeast(0)
+
+    val anim by animateFloatAsState(
+        targetValue = 1f,
+        animationSpec = tween(800, easing = FastOutSlowInEasing),
+        label = "barFill",
+    )
+
+    val ink = CalSnapColors.Ink
+    val red = CalSnapColors.Red
+    val muted = CalSnapColors.Muted
+
+    Column(modifier = modifier) {
         Box(
             modifier = Modifier
-                .weight(1f)
-                .height(8.dp)
-                .clip(RoundedCornerShape(CalSnapRadius.pill))
+                .fillMaxWidth()
+                .weight(1f),
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val w = size.width
+                val h = size.height
+                val barCount = padded.size
+                val slot = w / barCount
+                val barW = slot * 0.55f
+                val gap = (slot - barW) / 2f
+
+                // Goal dashed line
+                if (goalKcal > 0) {
+                    val y = h * (1f - (goalKcal / maxVal).toFloat()).coerceIn(0f, 1f)
+                    drawLine(
+                        color = red,
+                        start = Offset(0f, y),
+                        end = Offset(w, y),
+                        strokeWidth = 1.5.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 6f)),
+                    )
+                }
+
+                // Bars
+                padded.forEachIndexed { i, v ->
+                    val ratio = if (maxVal > 0) (v / maxVal).toFloat() else 0f
+                    val animatedRatio = ratio * anim
+                    val barH = (h * animatedRatio).coerceAtLeast(if (v > 0) 4f else 0f)
+                    val x = i * slot + gap
+                    val y = h - barH
+                    val isToday = i == todayIdx
+                    drawRoundedBar(
+                        color = if (isToday) red else ink.copy(alpha = 0.85f),
+                        x = x, y = y, w = barW, h = barH,
+                        radiusPx = 6.dp.toPx(),
+                    )
+                }
+            }
+
+            // Goal label top-right
+            if (goalKcal > 0) {
+                Text(
+                    text = "${formatThousands(goalKcal.roundToInt())} goal",
+                    fontSize = 10.sp,
+                    color = red,
+                    fontWeight = FontWeight.W700,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(y = (-2).dp),
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround,
+        ) {
+            days.forEachIndexed { i, d ->
+                Text(
+                    text = d,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.W700,
+                    color = if (i == todayIdx) red else muted,
+                )
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawRoundedBar(
+    color: Color,
+    x: Float, y: Float, w: Float, h: Float,
+    radiusPx: Float,
+) {
+    if (h <= 0f) return
+    val effectiveRadius = radiusPx.coerceAtMost(h)
+    drawRoundRect(
+        color = color,
+        topLeft = Offset(x, y),
+        size = Size(w, h),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(effectiveRadius, effectiveRadius),
+    )
+}
+
+// ─── Macro split card ───────────────────────────────────────────────────────
+
+@Composable
+private fun MacroSplitCard(
+    avgProtein: Double,
+    avgCarbs: Double,
+    avgFat: Double,
+    modifier: Modifier = Modifier,
+) {
+    val proteinKcal = avgProtein * 4
+    val carbsKcal = avgCarbs * 4
+    val fatKcal = avgFat * 9
+    val total = (proteinKcal + carbsKcal + fatKcal).coerceAtLeast(1.0)
+    val pP = (proteinKcal / total).toFloat()
+    val pC = (carbsKcal / total).toFloat()
+    val pF = (fatKcal / total).toFloat()
+
+    Column(
+        modifier = modifier
+            .shadow(
+                elevation = 6.dp,
+                shape = RoundedCornerShape(22.dp),
+                ambientColor = Color(0x0A140F08),
+                spotColor = Color(0x10140F08),
+            )
+            .clip(RoundedCornerShape(22.dp))
+            .background(CalSnapColors.Background)
+            .padding(18.dp),
+    ) {
+        Text(
+            text = "Macro split — this week",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.W700,
+            color = CalSnapColors.Ink,
+            letterSpacing = (-0.2).sp,
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        val animP by animateFloatAsState(pP, tween(700, easing = FastOutSlowInEasing), label = "p")
+        val animC by animateFloatAsState(pC, tween(700, easing = FastOutSlowInEasing), label = "c")
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(12.dp)
+                .clip(RoundedCornerShape(6.dp))
                 .background(CalSnapColors.Divider),
+        ) {
+            Box(modifier = Modifier.fillMaxHeight().weight(animP.coerceAtLeast(0.001f)).background(CalSnapColors.Protein))
+            Box(modifier = Modifier.fillMaxHeight().weight(animC.coerceAtLeast(0.001f)).background(CalSnapColors.Carb))
+            Box(modifier = Modifier.fillMaxHeight().weight((1f - animP - animC).coerceAtLeast(0.001f)).background(CalSnapColors.Fat))
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            MacroColumn(
+                label = "Protein",
+                pct = (pP * 100).roundToInt(),
+                grams = (avgProtein * 7).roundToInt(),
+                color = CalSnapColors.Protein,
+            )
+            MacroColumn(
+                label = "Carbs",
+                pct = (pC * 100).roundToInt(),
+                grams = (avgCarbs * 7).roundToInt(),
+                color = CalSnapColors.Carb,
+            )
+            MacroColumn(
+                label = "Fat",
+                pct = (pF * 100).roundToInt(),
+                grams = (avgFat * 7).roundToInt(),
+                color = CalSnapColors.Fat,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MacroColumn(label: String, pct: Int, grams: Int, color: Color) {
+    Column {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth((value / total).toFloat().coerceIn(0f, 1f))
-                    .clip(RoundedCornerShape(CalSnapRadius.pill))
+                    .size(8.dp)
+                    .clip(CircleShape)
                     .background(color),
+            )
+            Text(
+                text = label,
+                fontSize = 11.sp,
+                color = CalSnapColors.Muted,
+                fontWeight = FontWeight.W600,
             )
         }
         Text(
             text = "$pct%",
-            style = CalSnapType.BodySmall,
-            color = CalSnapColors.Muted,
-            modifier = Modifier.width(32.dp),
-            textAlign = TextAlign.End,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.W700,
+            color = CalSnapColors.Ink,
+            modifier = Modifier.padding(top = 2.dp),
         )
-    }
-}
-
-@Composable
-private fun AvgCell(
-    value: String,
-    unit: String,
-    label: String,
-    color: androidx.compose.ui.graphics.Color,
-) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = value,
-            style = CalSnapType.HeadlineMedium,
-            color = color,
+            text = "$grams g",
+            fontSize = 11.sp,
+            color = CalSnapColors.Muted,
+            modifier = Modifier.padding(top = 1.dp),
         )
-        if (unit.isNotEmpty()) {
-            Text(unit, style = CalSnapType.Label, color = CalSnapColors.Muted)
-        }
-        Text(label, style = CalSnapType.BodySmall, color = CalSnapColors.Muted)
     }
 }
 
-@Composable
-private fun CellDivider() {
-    Box(
-        modifier = Modifier
-            .width(1.dp)
-            .height(40.dp)
-            .background(CalSnapColors.Divider),
-    )
-}
+// ─── Premium gate ───────────────────────────────────────────────────────────
 
 @Composable
 private fun PremiumGate(onUpgrade: () -> Unit) {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(CalSnapSpacing.xl),
-        contentAlignment = Alignment.Center,
+            .padding(horizontal = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(CalSnapSpacing.md),
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .clip(CircleShape)
+                .background(CalSnapColors.CarbBg),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(72.dp)
-                    .clip(CircleShape)
-                    .background(CalSnapColors.CarbBg),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("★", fontSize = 32.sp)
-            }
-
-            Text(
-                text = "Analytics is Premium",
-                style = CalSnapType.HeadlineLarge,
-                color = CalSnapColors.Ink,
-                textAlign = TextAlign.Center,
-            )
-
-            Text(
-                text = "Unlock weekly calorie charts, macro splits,\nand trend tracking.",
-                style = CalSnapType.Body,
-                color = CalSnapColors.Muted,
-                textAlign = TextAlign.Center,
-            )
-
-            Spacer(Modifier.height(CalSnapSpacing.sm))
-
-            CalSnapBrandButton(
-                text = "Upgrade to Premium",
-                onClick = onUpgrade,
-            )
+            CalSnapIcon(name = "sparkle", size = 32.dp, color = CalSnapColors.Carb, strokeWidth = 2.2f)
         }
+        Spacer(Modifier.height(20.dp))
+        Text(
+            text = "Stats are a CalSnap Pro feature",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.W700,
+            color = CalSnapColors.Ink,
+            letterSpacing = (-0.4).sp,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "Unlock weekly trends, macro splits, and deficit tracking with CalSnap Pro.",
+            fontSize = 14.sp,
+            color = CalSnapColors.Muted,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(24.dp))
+        CalSnapBrandButton(text = "Try CalSnap Pro", onClick = onUpgrade)
     }
 }
+
+private fun formatThousands(n: Int): String =
+    if (n >= 1000) "${n / 1000},${(n % 1000).toString().padStart(3, '0')}" else n.toString()
+
+private fun List<Double>.max(): Double = if (isEmpty()) 0.0 else maxOrNull() ?: 0.0

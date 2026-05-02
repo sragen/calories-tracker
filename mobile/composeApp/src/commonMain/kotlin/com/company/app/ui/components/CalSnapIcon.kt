@@ -43,15 +43,16 @@ private val ICON_MAP: Map<String, List<IcEl>> = mapOf(
     "edit"     to listOf(IcPath("M4 20h4l10-10-4-4L4 16zM14 6l4 4")),
     "water"    to listOf(IcPath("M12 3c-4 5-6 8-6 11a6 6 0 0012 0c0-3-2-6-6-11z")),
     "fork"     to listOf(IcPath("M5 3v6a3 3 0 003 3v9M11 3v6M8 3v4M19 3v18M19 12c-2 0-3-1-3-3V3")),
-    "weight"   to listOf(IcPath("M5 7h14l-1 13H6z"), IcCircle(12f, 12f, 3f)),
+    "weight"   to listOf(IcCircle(12f, 5f, 3f), IcPath("M6.5 8a2 2 0 0 0-1.9 1.4L2.1 18.5A2 2 0 0 0 4 21h16a2 2 0 0 0 1.9-2.5L19.4 9.4A2 2 0 0 0 17.5 8z")),
     "star"     to listOf(IcPath("M12 3l2.7 5.5 6 .9-4.3 4.2 1 6L12 17l-5.4 2.6 1-6L3.3 9.4l6-.9z")),
     "arrow-r"  to listOf(IcPath("M5 12h14M13 5l7 7-7 7")),
     "flash"    to listOf(IcPath("M13 2L4 14h7l-1 8 9-12h-7z")),
     "gallery"  to listOf(IcRect(3f, 3f, 18f, 18f, rx = 2f), IcCircle(9f, 9f, 2f), IcPath("M21 15l-5-5L5 21")),
-    "lock"     to listOf(IcRect(4f, 11f, 16f, 10f, rx = 2f), IcPath("M8 11V7a4 4 0 018 0v4")),
-    "bell"     to listOf(IcPath("M6 16V11a6 6 0 0112 0v5l2 2H4zM10 20a2 2 0 004 0")),
-    "streak"   to listOf(IcPath("M12 2c2 4 5 6 5 10a5 5 0 11-10 0c0-2 1-4 2-5 0 1 1 2 2 2 0-2-1-3 1-7z")),
-    "flame"    to listOf(IcPath("M12 2c1 4 4 5 4 9a4 4 0 11-8 0c0-2 1-3 1-5 0 1 1 2 2 2 0-2-1-3 1-6z")),
+    "lock"     to listOf(IcRect(3f, 11f, 18f, 11f, rx = 2f), IcPath("M7 11V7a5 5 0 0 1 10 0v4")),
+    "bell"     to listOf(IcPath("M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0")),
+    "streak"   to listOf(IcPath("M12 2c.6 2.5 2.4 4.2 3.6 5.7C16.6 9 17 10.3 17 12a5 5 0 1 1-10 0c0-1.4.6-2.5 1.5-3.3.2.9.8 1.5 1.5 1.7-.4-2.6.4-5.4 2-8.4z")),
+    "flame"    to listOf(IcPath("M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z")),
+    "trash"    to listOf(IcPath("M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6")),
 )
 
 /**

@@ -1,7 +1,9 @@
 package com.company.app.ui.subscription
 
 import com.company.app.shared.data.model.EntitlementResponse
+import com.company.app.shared.data.model.SubscriptionPlanResponse
 import com.company.app.shared.data.repository.BillingRepository
+import com.company.app.shared.data.repository.SubscriptionRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,7 +20,10 @@ sealed class SubscriptionState {
     data class Error(val message: String) : SubscriptionState()
 }
 
-class SubscriptionViewModel(private val billingRepo: BillingRepository) {
+class SubscriptionViewModel(
+    private val billingRepo: BillingRepository,
+    private val subscriptionRepo: SubscriptionRepository,
+) {
     // SupervisorJob so one failed child doesn't cancel siblings; cancel via close()
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.Main + job)
@@ -26,7 +31,19 @@ class SubscriptionViewModel(private val billingRepo: BillingRepository) {
     private val _state = MutableStateFlow<SubscriptionState>(SubscriptionState.Loading)
     val state: StateFlow<SubscriptionState> = _state
 
-    init { checkEntitlement() }
+    private val _plans = MutableStateFlow<List<SubscriptionPlanResponse>>(emptyList())
+    val plans: StateFlow<List<SubscriptionPlanResponse>> = _plans
+
+    init {
+        checkEntitlement()
+        loadPlans()
+    }
+
+    private fun loadPlans() {
+        scope.launch {
+            subscriptionRepo.getPlans().onSuccess { _plans.value = it }
+        }
+    }
 
     fun checkEntitlement() {
         _state.value = SubscriptionState.Loading

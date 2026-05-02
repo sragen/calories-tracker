@@ -1,9 +1,11 @@
 package com.company.app.modules.subscription.service
 
 import com.company.app.common.exception.AppException
+import com.company.app.modules.subscription.dto.SubscriptionPlanResponse
 import com.company.app.modules.subscription.dto.SubscriptionStatusResponse
 import com.company.app.modules.subscription.entity.PaymentEvent
 import com.company.app.modules.subscription.entity.Subscription
+import com.company.app.modules.subscription.entity.SubscriptionPlan
 import com.company.app.modules.subscription.repository.PaymentEventRepository
 import com.company.app.modules.subscription.repository.SubscriptionPlanRepository
 import com.company.app.modules.subscription.repository.SubscriptionRepository
@@ -18,6 +20,21 @@ class SubscriptionService(
     private val paymentEventRepository: PaymentEventRepository,
     private val receiptValidationService: ReceiptValidationService
 ) {
+    fun getActivePlans(): List<SubscriptionPlanResponse> =
+        planRepository.findByIsActiveTrue()
+            .sortedBy { it.intervalDays }
+            .map { it.toResponse() }
+
+    private fun SubscriptionPlan.toResponse() = SubscriptionPlanResponse(
+        id = id,
+        name = name,
+        priceIdr = priceIdr,
+        intervalDays = intervalDays,
+        trialDays = trialDays,
+        productIdAndroid = platformProductIdAndroid,
+        productIdIos = platformProductIdIos,
+    )
+
     fun getStatus(userId: Long): SubscriptionStatusResponse {
         val sub = subscriptionRepository.findActiveByUserId(userId)
             ?: throw AppException.notFound("No active subscription found")

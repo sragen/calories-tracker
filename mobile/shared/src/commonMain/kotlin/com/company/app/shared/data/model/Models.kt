@@ -248,6 +248,17 @@ data class DailyRangeSummary(
 // ── Subscription (IAP) ───────────────────────────────────────────
 
 @Serializable
+data class SubscriptionPlanResponse(
+    val id: Long,
+    val name: String,
+    val priceIdr: Long,
+    val intervalDays: Int,
+    val trialDays: Int,
+    val productIdAndroid: String? = null,
+    val productIdIos: String? = null,
+)
+
+@Serializable
 data class EntitlementResponse(
     val entitled: Boolean,
     val source: String? = null,
