@@ -17,6 +17,15 @@
         android:supportsRtl="true"
         android:networkSecurityConfig="@xml/network_security_config">
 
+        <!--
+            Web (server) OAuth client ID used by Credential Manager to mint
+            ID tokens that the backend can verify. Configure via @string/google_web_client_id.
+            See setup notes in README / docs/GOOGLE_SIGN_IN.md.
+        -->
+        <meta-data
+            android:name="com.company.app.GOOGLE_WEB_CLIENT_ID"
+            android:value="@string/google_web_client_id" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

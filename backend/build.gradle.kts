@@ -53,6 +53,9 @@ dependencies {
     // Google Play receipt validation
     implementation("com.google.auth:google-auth-library-oauth2-http:1.23.0")
 
+    // Google ID token verification (Sign-In)
+    implementation("com.google.api-client:google-api-client:2.7.0")
+
     // Apple StoreKit JWS verification
     implementation("com.nimbusds:nimbus-jose-jwt:9.40")
 

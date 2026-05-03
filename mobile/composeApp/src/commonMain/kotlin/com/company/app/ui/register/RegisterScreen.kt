@@ -23,12 +23,16 @@ import com.company.app.ui.components.CalSnapIcon
 import com.company.app.ui.components.CalSnapPrimaryButton
 import com.company.app.ui.components.CalSnapTextButton
 import com.company.app.ui.login.AuthField
+import com.company.app.ui.login.GoogleSignInButton
+import com.company.app.ui.login.OrDivider
+import com.company.app.ui.platform.rememberGoogleSignInClient
 import com.company.app.ui.theme.*
+import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterScreen(
     viewModel: RegisterViewModel,
-    onRegisterSuccess: () -> Unit,
+    onRegisterSuccess: (isNewUser: Boolean) -> Unit,
     onBack: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
@@ -36,9 +40,11 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    val googleClient = rememberGoogleSignInClient()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(state.isSuccess) {
-        if (state.isSuccess) onRegisterSuccess()
+        if (state.isSuccess) onRegisterSuccess(state.isNewUser)
     }
 
     Box(
@@ -152,6 +158,27 @@ fun RegisterScreen(
                 CalSnapTextButton(
                     text = "Already have an account? Sign in",
                     onClick = onBack,
+                )
+
+                Spacer(Modifier.height(CalSnapSpacing.sm))
+                OrDivider()
+                Spacer(Modifier.height(CalSnapSpacing.sm))
+
+                GoogleSignInButton(
+                    enabled = !state.isLoading,
+                    onClick = {
+                        scope.launch {
+                            googleClient.signIn().fold(
+                                onSuccess = { idToken -> viewModel.googleSignIn(idToken) },
+                                onFailure = { e ->
+                                    val msg = e.message ?: "Google sign-in failed"
+                                    if (!msg.contains("cancelled", ignoreCase = true)) {
+                                        viewModel.showError(msg)
+                                    }
+                                },
+                            )
+                        }
+                    },
                 )
 
                 Spacer(Modifier.height(CalSnapSpacing.xl))

@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">CalSnap</string>
+    <!--
+        Replace with the Web (server) OAuth 2.0 client ID from Google Cloud Console.
+        Format: 1234567890-abcdefghijklmnop.apps.googleusercontent.com
+    -->
+    <string name="google_web_client_id" translatable="false">YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com</string>
 </resources>

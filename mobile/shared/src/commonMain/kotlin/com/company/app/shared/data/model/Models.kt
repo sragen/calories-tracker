@@ -16,8 +16,12 @@ data class AuthResponse(
     val accessToken: String,
     val refreshToken: String,
     val tokenType: String = "Bearer",
-    val expiresIn: Long = 86400
+    val expiresIn: Long = 86400,
+    val isNewUser: Boolean = false,
 )
+
+@Serializable
+data class GoogleLoginRequest(val idToken: String)
 
 @Serializable
 data class UserResponse(

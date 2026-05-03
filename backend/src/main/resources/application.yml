@@ -30,6 +30,11 @@ app:
   jwt:
     secret: ${JWT_SECRET:change-me-to-a-very-long-secret-key-at-least-32-characters-long}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  auth:
+    google:
+      # Comma-separated list of accepted Google OAuth client IDs (Web + iOS + Android).
+      # Leave empty to disable Google Sign-In (endpoint will return 503).
+      client-ids: ${APP_AUTH_GOOGLE_CLIENT_IDS:}
   minio:
     endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
     access-key: ${MINIO_ACCESS_KEY:minioadmin}

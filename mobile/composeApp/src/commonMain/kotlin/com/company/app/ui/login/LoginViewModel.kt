@@ -10,7 +10,8 @@ import kotlinx.coroutines.launch
 data class LoginState(
     val isLoading: Boolean = false,
     val error: String? = null,
-    val isSuccess: Boolean = false
+    val isSuccess: Boolean = false,
+    val isNewUser: Boolean = false,
 )
 
 class LoginViewModel(private val authRepo: AuthRepository) {
@@ -30,5 +31,18 @@ class LoginViewModel(private val authRepo: AuthRepository) {
                 .onSuccess { _state.value = LoginState(isSuccess = true) }
                 .onFailure { _state.value = LoginState(error = it.message ?: "Login failed") }
         }
+    }
+
+    fun googleSignIn(idToken: String) {
+        _state.value = LoginState(isLoading = true)
+        scope.launch {
+            authRepo.googleSignIn(idToken)
+                .onSuccess { _state.value = LoginState(isSuccess = true, isNewUser = it.isNewUser) }
+                .onFailure { _state.value = LoginState(error = it.message ?: "Google sign-in failed") }
+        }
+    }
+
+    fun showError(message: String) {
+        _state.value = _state.value.copy(isLoading = false, error = message)
     }
 }

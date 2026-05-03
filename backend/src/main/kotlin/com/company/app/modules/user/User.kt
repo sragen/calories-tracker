@@ -32,6 +32,9 @@ class User(
     @Column(name = "fcm_token")
     var fcmToken: String? = null,
 
+    @Column(name = "google_id", unique = true)
+    var googleId: String? = null,
+
     @Column(name = "last_login")
     var lastLogin: LocalDateTime? = null
 ) : BaseEntity() {

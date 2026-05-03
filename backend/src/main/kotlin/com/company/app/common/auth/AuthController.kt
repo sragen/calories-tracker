@@ -17,7 +17,8 @@ class AuthController(
     private val userRepository: UserRepository,
     private val refreshTokenRepository: RefreshTokenRepository,
     private val jwtService: JwtService,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    private val googleTokenVerifier: GoogleTokenVerifier,
 ) {
 
     @PostMapping("/register")
@@ -48,6 +49,49 @@ class AuthController(
         userRepository.save(user)
 
         return buildAuthResponse(user)
+    }
+
+    @PostMapping("/google")
+    fun googleLogin(@Valid @RequestBody req: GoogleLoginRequest): AuthResponse {
+        val info = googleTokenVerifier.verify(req.idToken)
+        if (!info.emailVerified || info.email.isNullOrBlank()) {
+            throw AppException.unauthorized("Google account email not verified")
+        }
+
+        val byGoogle = userRepository.findByGoogleIdAndDeletedAtIsNull(info.sub)
+        var isNew = false
+        val user: User = when {
+            byGoogle != null -> byGoogle
+            else -> {
+                val byEmail = userRepository.findByEmailAndDeletedAtIsNull(info.email)
+                if (byEmail != null) {
+                    // Auto-link existing email account
+                    byEmail.googleId = info.sub
+                    if (byEmail.avatarUrl.isNullOrBlank() && !info.pictureUrl.isNullOrBlank()) {
+                        byEmail.avatarUrl = info.pictureUrl
+                    }
+                    userRepository.save(byEmail)
+                } else {
+                    isNew = true
+                    userRepository.save(
+                        User(
+                            email = info.email,
+                            name = info.name?.takeIf { it.isNotBlank() } ?: info.email.substringBefore('@'),
+                            avatarUrl = info.pictureUrl,
+                            googleId = info.sub,
+                        )
+                    )
+                }
+            }
+        }
+
+        if (user.status != "ACTIVE") {
+            throw AppException.forbidden("Account is ${user.status.lowercase()}")
+        }
+        user.lastLogin = LocalDateTime.now()
+        userRepository.save(user)
+
+        return buildAuthResponse(user, isNewUser = isNew)
     }
 
     @PostMapping("/refresh")
@@ -87,7 +131,7 @@ class AuthController(
         return userRepository.save(user).toResponse()
     }
 
-    private fun buildAuthResponse(user: User): AuthResponse {
+    private fun buildAuthResponse(user: User, isNewUser: Boolean = false): AuthResponse {
         val refreshToken = UUID.randomUUID().toString()
         refreshTokenRepository.save(
             RefreshToken(userId = user.id, token = refreshToken,
@@ -95,7 +139,8 @@ class AuthController(
         )
         return AuthResponse(
             accessToken = jwtService.generateAccessToken(user.id, user.email ?: "", user.role),
-            refreshToken = refreshToken
+            refreshToken = refreshToken,
+            isNewUser = isNewUser,
         )
     }
 }

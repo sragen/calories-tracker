@@ -36,6 +36,17 @@ class AuthRepository(
             Result.failure(e)
         }
 
+    suspend fun googleSignIn(idToken: String): Result<GoogleSignInResult> =
+        try {
+            val auth = api.googleLogin(idToken)
+            storage.saveTokens(auth.accessToken, auth.refreshToken)
+            Result.success(GoogleSignInResult(user = api.getMe(), isNewUser = auth.isNewUser))
+        } catch (e: ResponseException) {
+            Result.failure(Exception(e.extractMessage()))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+
     suspend fun getMe(): Result<UserResponse> =
         try {
             Result.success(api.getMe())
@@ -51,6 +62,8 @@ class AuthRepository(
 
     suspend fun getToken(): String? = storage.accessToken.firstOrNull()
 }
+
+data class GoogleSignInResult(val user: UserResponse, val isNewUser: Boolean)
 
 private suspend fun ResponseException.extractMessage(): String {
     val body = response.bodyAsText()

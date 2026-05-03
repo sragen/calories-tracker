@@ -34,7 +34,12 @@ data class AuthResponse(
     val accessToken: String,
     val refreshToken: String,
     val tokenType: String = "Bearer",
-    val expiresIn: Long = 86400
+    val expiresIn: Long = 86400,
+    val isNewUser: Boolean = false,
+)
+
+data class GoogleLoginRequest(
+    @field:NotBlank val idToken: String,
 )
 
 data class UserResponse(

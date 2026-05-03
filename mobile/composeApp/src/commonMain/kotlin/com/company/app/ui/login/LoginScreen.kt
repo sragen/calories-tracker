@@ -1,6 +1,9 @@
 package com.company.app.ui.login
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -12,26 +15,33 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.company.app.ui.components.CalSnapPrimaryButton
 import com.company.app.ui.components.CalSnapTextButton
+import com.company.app.ui.platform.rememberGoogleSignInClient
 import com.company.app.ui.theme.*
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel,
-    onLoginSuccess: () -> Unit,
+    onLoginSuccess: (isNewUser: Boolean) -> Unit,
     onNavigateToRegister: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    val googleClient = rememberGoogleSignInClient()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(state.isSuccess) {
-        if (state.isSuccess) onLoginSuccess()
+        if (state.isSuccess) onLoginSuccess(state.isNewUser)
     }
 
     Box(
@@ -116,7 +126,97 @@ fun LoginScreen(
                 text = "Don't have an account? Create one",
                 onClick = onNavigateToRegister,
             )
+
+            Spacer(Modifier.height(CalSnapSpacing.sm))
+            OrDivider()
+            Spacer(Modifier.height(CalSnapSpacing.sm))
+
+            GoogleSignInButton(
+                enabled = !state.isLoading,
+                onClick = {
+                    scope.launch {
+                        googleClient.signIn().fold(
+                            onSuccess = { idToken -> viewModel.googleSignIn(idToken) },
+                            onFailure = { e ->
+                                val msg = e.message ?: "Google sign-in failed"
+                                if (!msg.contains("cancelled", ignoreCase = true)) {
+                                    viewModel.showError(msg)
+                                }
+                            },
+                        )
+                    }
+                },
+            )
         }
+    }
+}
+
+@Composable
+internal fun OrDivider() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(modifier = Modifier.weight(1f).height(1.dp).background(CalSnapColors.Divider))
+        Text(
+            text = "OR",
+            style = CalSnapType.Label,
+            color = CalSnapColors.Muted,
+        )
+        Box(modifier = Modifier.weight(1f).height(1.dp).background(CalSnapColors.Divider))
+    }
+}
+
+@Composable
+internal fun GoogleSignInButton(enabled: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .clip(RoundedCornerShape(CalSnapRadius.pill))
+            .background(CalSnapColors.Background)
+            .border(
+                width = 1.dp,
+                color = CalSnapColors.Border,
+                shape = RoundedCornerShape(CalSnapRadius.pill),
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                enabled = enabled,
+                onClick = onClick,
+            )
+            .padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+    ) {
+        GoogleGlyph()
+        Text(
+            text = "Continue with Google",
+            color = CalSnapColors.Ink,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.W600,
+        )
+    }
+}
+
+@Composable
+private fun GoogleGlyph() {
+    // Google "G" wordmark approximated via colored 'G' on a 18dp circle.
+    // Real assets should be replaced via Google brand guidelines once available.
+    Box(
+        modifier = Modifier
+            .size(20.dp)
+            .clip(RoundedCornerShape(50)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "G",
+            color = Color(0xFF4285F4),
+            fontSize = 18.sp,
+            fontWeight = FontWeight.W900,
+        )
     }
 }
 

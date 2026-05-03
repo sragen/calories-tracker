@@ -10,7 +10,8 @@ import kotlinx.coroutines.launch
 data class RegisterState(
     val isLoading: Boolean = false,
     val error: String? = null,
-    val isSuccess: Boolean = false
+    val isSuccess: Boolean = false,
+    val isNewUser: Boolean = true,
 )
 
 class RegisterViewModel(private val authRepo: AuthRepository) {
@@ -35,8 +36,21 @@ class RegisterViewModel(private val authRepo: AuthRepository) {
         _state.value = RegisterState(isLoading = true)
         scope.launch {
             authRepo.register(email, password, name)
-                .onSuccess { _state.value = RegisterState(isSuccess = true) }
+                .onSuccess { _state.value = RegisterState(isSuccess = true, isNewUser = true) }
                 .onFailure { _state.value = RegisterState(error = it.message ?: "Registration failed") }
         }
+    }
+
+    fun googleSignIn(idToken: String) {
+        _state.value = RegisterState(isLoading = true)
+        scope.launch {
+            authRepo.googleSignIn(idToken)
+                .onSuccess { _state.value = RegisterState(isSuccess = true, isNewUser = it.isNewUser) }
+                .onFailure { _state.value = RegisterState(error = it.message ?: "Google sign-in failed") }
+        }
+    }
+
+    fun showError(message: String) {
+        _state.value = _state.value.copy(isLoading = false, error = message)
     }
 }

@@ -46,6 +46,12 @@ class ApiService(
             setBody(LoginRequest(email, password))
         }.body()
 
+    suspend fun googleLogin(idToken: String): AuthResponse =
+        client.post("$baseUrl/api/auth/google") {
+            contentType(ContentType.Application.Json)
+            setBody(GoogleLoginRequest(idToken))
+        }.body()
+
     suspend fun getMe(): UserResponse =
         client.get("$baseUrl/api/auth/me") { auth() }.body()
 

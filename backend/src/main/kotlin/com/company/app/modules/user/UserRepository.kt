@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository
 interface UserRepository : BaseRepository<User, Long> {
     fun findByEmailAndDeletedAtIsNull(email: String): User?
     fun findByPhoneAndDeletedAtIsNull(phone: String): User?
+    fun findByGoogleIdAndDeletedAtIsNull(googleId: String): User?
 
     @Query("""
         SELECT u FROM User u

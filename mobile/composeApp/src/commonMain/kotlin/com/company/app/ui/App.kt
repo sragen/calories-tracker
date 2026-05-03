@@ -109,11 +109,15 @@ private fun AppContent() {
             val viewModel: LoginViewModel = koinInject()
             LoginScreen(
                 viewModel = viewModel,
-                onLoginSuccess = {
+                onLoginSuccess = { isNewUser ->
                     isGuestMode = false
-                    scope.launch {
-                        val hasProfile = bodyProfileRepo.hasProfile().getOrDefault(false)
-                        currentScreen = if (hasProfile) Screen.Home else Screen.Onboarding
+                    if (isNewUser) {
+                        currentScreen = Screen.Onboarding
+                    } else {
+                        scope.launch {
+                            val hasProfile = bodyProfileRepo.hasProfile().getOrDefault(false)
+                            currentScreen = if (hasProfile) Screen.Home else Screen.Onboarding
+                        }
                     }
                 },
                 onNavigateToRegister = { currentScreen = Screen.Register }
@@ -123,9 +127,16 @@ private fun AppContent() {
             val viewModel: RegisterViewModel = koinInject()
             RegisterScreen(
                 viewModel = viewModel,
-                onRegisterSuccess = {
+                onRegisterSuccess = { isNewUser ->
                     isGuestMode = false
-                    currentScreen = Screen.Onboarding
+                    if (isNewUser) {
+                        currentScreen = Screen.Onboarding
+                    } else {
+                        scope.launch {
+                            val hasProfile = bodyProfileRepo.hasProfile().getOrDefault(false)
+                            currentScreen = if (hasProfile) Screen.Home else Screen.Onboarding
+                        }
+                    }
                 },
                 onBack = {
                     currentScreen = if (isGuestMode) Screen.Welcome else Screen.Login
