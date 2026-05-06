@@ -22,7 +22,7 @@ class UserFoodLibraryService(
 ) {
 
     fun list(userId: Long, sort: String, search: String?, pageable: PageRequest): Page<UserFoodResponse> {
-        val sanitizedSearch = search?.takeIf { it.isNotBlank() }
+        val sanitizedSearch = search?.takeIf { it.isNotBlank() } ?: ""
         return when (sort.uppercase()) {
             "MOST_USED"    -> repository.findByUserIdOrderByUseCount(userId, sanitizedSearch, pageable)
             "ALPHABETICAL" -> repository.findByUserIdOrderByName(userId, sanitizedSearch, pageable)
