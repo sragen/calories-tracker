@@ -40,10 +40,22 @@ class GeminiService(
 
     private val prompt = """
         Analisis gambar makanan ini dan identifikasi semua makanan yang terlihat.
-        Untuk setiap makanan, berikan estimasi berdasarkan porsi yang terlihat.
+        Untuk setiap makanan, berikan estimasi nutrisi berdasarkan porsi yang terlihat.
+
+        ATURAN ESTIMASI BERAT (WAJIB DIIKUTI):
+        - Foto 2D membuat makanan tampak 20-30% lebih besar dari berat sebenarnya.
+          Kompensasi dengan selalu memilih estimasi yang LEBIH KONSERVATIF.
+        - Daging/protein (ayam, ikan, daging sapi, tempe, tahu): porsi standar = 80-120g.
+          Hanya melebihi 120g jika makanan jelas memenuhi lebih dari separuh piring makan.
+        - Nasi putih matang: 1 centong standar = 100-120g. Porsi sedang = 150-180g.
+        - Mie atau pasta matang: porsi sedang = 150-200g.
+        - Sayur tumis atau rebus: porsi standar = 50-80g.
+        - Jika ragu antara dua estimasi berat, SELALU pilih yang lebih rendah.
+        - Gunakan piring standar (diameter 25cm) atau sendok makan (15ml) sebagai acuan
+          ukuran jika terlihat dalam foto.
 
         Kembalikan HANYA JSON array, tidak ada teks lain:
-        [{"name":"Nasi Putih","portionG":200,"caloriesPer100g":175,"proteinPer100g":3.1,"carbsPer100g":38.9,"fatPer100g":0.3}]
+        [{"name":"Nasi Putih","portionG":150,"caloriesPer100g":175,"proteinPer100g":3.1,"carbsPer100g":38.9,"fatPer100g":0.3}]
 
         Gunakan nama makanan dalam bahasa Indonesia.
         Jika tidak ada makanan terdeteksi, kembalikan array kosong: []

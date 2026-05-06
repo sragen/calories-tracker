@@ -22,4 +22,8 @@ class DailyGoalController(private val dailyGoalService: DailyGoalService) {
     @PostMapping("/reset")
     fun reset(@AuthenticationPrincipal principal: UserPrincipal) =
         dailyGoalService.reset(principal.id)
+
+    @GetMapping("/presets")
+    fun presets(@AuthenticationPrincipal principal: UserPrincipal) =
+        dailyGoalService.getPresets(principal.id)
 }

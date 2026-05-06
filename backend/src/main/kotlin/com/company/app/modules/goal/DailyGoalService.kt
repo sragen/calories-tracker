@@ -1,12 +1,17 @@
 package com.company.app.modules.goal
 
 import com.company.app.common.exception.AppException
+import com.company.app.modules.profile.BmrCalculator
 import com.company.app.modules.profile.BmrResult
+import com.company.app.modules.profile.BodyProfileRepository
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 
 @Service
-class DailyGoalService(private val dailyGoalRepository: DailyGoalRepository) {
+class DailyGoalService(
+    private val dailyGoalRepository: DailyGoalRepository,
+    private val bodyProfileRepository: BodyProfileRepository
+) {
 
     fun getByUserId(userId: Long): DailyGoalResponse =
         (dailyGoalRepository.findByUserId(userId) ?: defaultGoal(userId)).toResponse()
@@ -45,6 +50,45 @@ class DailyGoalService(private val dailyGoalRepository: DailyGoalRepository) {
             goal.updatedAt = LocalDateTime.now()
             dailyGoalRepository.save(goal)
         }
+    }
+
+    fun getPresets(userId: Long): GoalPresetsResponse {
+        val profile = bodyProfileRepository.findByUserId(userId)
+            ?: throw AppException.badRequest("Body profile belum diisi. Lengkapi data tubuh terlebih dahulu.")
+
+        val presetTypes = listOf(
+            "LOSE"     to "Cut",
+            "MAINTAIN" to "Maintain",
+            "GAIN"     to "Bulk"
+        )
+
+        val presets = presetTypes.map { (goal, label) ->
+            val bmr = BmrCalculator.calculate(
+                weightKg = profile.weightKg,
+                heightCm = profile.heightCm,
+                birthDate = profile.birthDate,
+                gender = profile.gender,
+                activityLevel = profile.activityLevel,
+                goal = goal
+            )
+            GoalPreset(
+                type = goal,
+                label = label,
+                adjustmentPercent = BmrCalculator.goalAdjustmentPercents[goal] ?: 0,
+                tdeeKcal = bmr.tdeeKcal,
+                targetCalories = bmr.recommendedCalories,
+                targetProteinG = bmr.recommendedProteinG,
+                targetCarbsG = bmr.recommendedCarbsG,
+                targetFatG = bmr.recommendedFatG
+            )
+        }
+
+        val tdeeKcal = presets.first { it.type == "MAINTAIN" }.tdeeKcal
+        return GoalPresetsResponse(
+            tdeeKcal = tdeeKcal,
+            presets = presets,
+            current = getByUserId(userId)
+        )
     }
 
     private fun defaultGoal(userId: Long) = DailyGoal(

@@ -20,6 +20,23 @@ data class DailyGoalRequest(
     @field:DecimalMin("0.0") val targetFatG: Double = 0.0
 )
 
+data class GoalPreset(
+    val type: String,
+    val label: String,
+    val adjustmentPercent: Int,
+    val tdeeKcal: Double,
+    val targetCalories: Double,
+    val targetProteinG: Double,
+    val targetCarbsG: Double,
+    val targetFatG: Double
+)
+
+data class GoalPresetsResponse(
+    val tdeeKcal: Double,
+    val presets: List<GoalPreset>,
+    val current: DailyGoalResponse
+)
+
 fun DailyGoal.toResponse() = DailyGoalResponse(
     targetCalories = targetCalories,
     targetProteinG = targetProteinG,

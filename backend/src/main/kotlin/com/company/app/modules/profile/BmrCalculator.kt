@@ -14,10 +14,17 @@ object BmrCalculator {
         "EXTRA_ACTIVE"       to 1.9
     )
 
-    private val goalAdjustments = mapOf(
-        "LOSE"     to -500.0,
-        "MAINTAIN" to 0.0,
-        "GAIN"     to 300.0
+    // Percentage of TDEE: Cut -20%, Maintain 100%, Bulk +15%
+    private val goalMultipliers = mapOf(
+        "LOSE"     to 0.80,
+        "MAINTAIN" to 1.00,
+        "GAIN"     to 1.15
+    )
+
+    val goalAdjustmentPercents = mapOf(
+        "LOSE"     to -20,
+        "MAINTAIN" to 0,
+        "GAIN"     to 15
     )
 
     private val macroRatios = mapOf(
@@ -40,9 +47,9 @@ object BmrCalculator {
         else
             (10 * weightKg) + (6.25 * heightCm) - (5 * age) - 161
 
-        val multiplier = activityMultipliers[activityLevel] ?: 1.2
-        val tdee = bmr * multiplier
-        val recommended = (tdee + (goalAdjustments[goal] ?: 0.0)).coerceAtLeast(1200.0)
+        val activityMultiplier = activityMultipliers[activityLevel] ?: 1.2
+        val tdee = bmr * activityMultiplier
+        val recommended = (tdee * (goalMultipliers[goal] ?: 1.0)).coerceAtLeast(1200.0)
 
         val (proteinRatio, carbsRatio, fatRatio) = macroRatios[goal] ?: Triple(0.25, 0.50, 0.25)
         val proteinG = (recommended * proteinRatio / 4).round1()

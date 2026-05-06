@@ -109,6 +109,57 @@ Override target secara manual.
 ### POST `/api/goals/daily/reset`
 Reset ke kalkulasi otomatis dari body profile.
 
+### GET `/api/goals/daily/presets`
+Ambil tiga opsi preset (Cut/Maintain/Bulk) berdasarkan body profile user saat ini.
+Digunakan di UI Settings → Daily Goals sebelum user memilih preset.
+
+Requires body profile — returns `400` if not set.
+
+**Response:**
+```json
+{
+  "presets": [
+    {
+      "type": "LOSE",
+      "label": "Cut (Deficit)",
+      "targetCalories": 1650.0,
+      "targetProteinG": 124.0,
+      "targetCarbsG": 165.0,
+      "targetFatG": 55.0,
+      "calorieAdjustment": -500
+    },
+    {
+      "type": "MAINTAIN",
+      "label": "Maintain",
+      "targetCalories": 2150.0,
+      "targetProteinG": 134.0,
+      "targetCarbsG": 269.0,
+      "targetFatG": 60.0,
+      "calorieAdjustment": 0
+    },
+    {
+      "type": "GAIN",
+      "label": "Bulk (Surplus)",
+      "targetCalories": 2450.0,
+      "targetProteinG": 153.0,
+      "targetCarbsG": 336.0,
+      "targetFatG": 54.0,
+      "calorieAdjustment": 300
+    }
+  ],
+  "current": {
+    "targetCalories": 2000.0,
+    "targetProteinG": 125.0,
+    "targetCarbsG": 250.0,
+    "targetFatG": 55.0,
+    "autoCalculated": false,
+    "updatedAt": "2026-05-06T10:00:00"
+  }
+}
+```
+
+After user selects a preset (and optionally overrides values), save via existing `PUT /api/goals/daily`.
+
 ---
 
 ## Food Database
@@ -276,6 +327,88 @@ Summary kalori periode (untuk analytics screen).
 ```
 
 **Akses:** Free tier hanya 1 hari, Premium 90 hari.
+
+---
+
+## User Food Library (My Foods)
+
+Personal food library per user. Saves foods from AI Scan or Barcode for quick re-logging without scanning again.
+
+### GET `/api/user-foods`
+List saved foods.
+
+**Query params:**
+- `sort`: `RECENTLY_USED` (default) | `MOST_USED` | `ALPHABETICAL`
+- `search`: optional, filter by food name
+- `page`, `size`: pagination (default size=20)
+
+**Response:**
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "foodName": "Ayam Bakar",
+      "caloriesPer100g": 165.0,
+      "proteinPer100g": 31.0,
+      "carbsPer100g": 0.0,
+      "fatPer100g": 3.6,
+      "servingSizeG": 150.0,
+      "imageUrl": "https://api.adikur.com/media/calsnap/ai-scans/42/uuid.jpg",
+      "source": "AI_SCAN",
+      "useCount": 5,
+      "lastUsedAt": "2026-05-03T12:30:00",
+      "totalCalories": 247.5
+    }
+  ],
+  "totalElements": 12,
+  "page": 0,
+  "size": 20
+}
+```
+
+### POST `/api/user-foods`
+Save a food to personal library. Idempotent — returns existing if same name already saved.
+
+**Request:**
+```json
+{
+  "foodName": "Ayam Bakar",
+  "caloriesPer100g": 165.0,
+  "proteinPer100g": 31.0,
+  "carbsPer100g": 0.0,
+  "fatPer100g": 3.6,
+  "servingSizeG": 150.0,
+  "imageUrl": "https://api.adikur.com/media/calsnap/ai-scans/42/uuid.jpg",
+  "source": "AI_SCAN",
+  "originalFoodId": null
+}
+```
+
+`imageUrl` comes from `AiScanResponse.imageUrl` — already returned by `/api/ai-scan/analyze`.
+
+**Response:** `UserFoodResponse` (same shape as list item above)
+
+### POST `/api/user-foods/{id}/log`
+Quick-log a saved food to a meal. Increments `use_count` and sets `last_used_at`.
+
+**Request:**
+```json
+{
+  "mealType": "LUNCH",
+  "portionG": 150.0,
+  "loggedAt": "2026-05-06"
+}
+```
+
+**Response:**
+```json
+{ "mealLogId": 99, "logged": true }
+```
+
+### DELETE `/api/user-foods/{id}`
+Remove from library. Does not delete the MinIO image.  
+**Response:** `204 No Content`
 
 ---
 
