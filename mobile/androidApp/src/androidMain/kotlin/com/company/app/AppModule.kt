@@ -25,6 +25,7 @@ import com.company.app.ui.profile.ProfileViewModel
 import com.company.app.ui.register.RegisterViewModel
 import com.company.app.ui.search.SearchFoodViewModel
 import com.company.app.ui.submit.SubmitFoodViewModel
+import com.company.app.ui.dailygoal.EditDailyTargetViewModel
 import com.company.app.ui.subscription.SubscriptionViewModel
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
@@ -76,4 +77,5 @@ val appModule = module {
     factory { AiScanViewModel(get(), get()) }
     factory { SubscriptionViewModel(get<BillingRepository>(), get()) }
     factory { AnalyticsViewModel(get(), get(), get()) }
+    factory { EditDailyTargetViewModel(get()) }
 }

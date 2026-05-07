@@ -12,6 +12,8 @@ import com.company.app.ui.aiscan.AiScanScreen
 import com.company.app.ui.aiscan.AiScanViewModel
 import com.company.app.ui.analytics.AnalyticsScreen
 import com.company.app.ui.analytics.AnalyticsViewModel
+import com.company.app.ui.dailygoal.EditDailyTargetScreen
+import com.company.app.ui.dailygoal.EditDailyTargetViewModel
 import com.company.app.ui.components.CalSnapTab
 import com.company.app.ui.home.HomeScreen
 import com.company.app.ui.home.HomeViewModel
@@ -165,7 +167,8 @@ private fun AppContent() {
                 },
                 onSubscription = { currentScreen = Screen.Paywall },
                 onAnalytics = { currentScreen = Screen.Analytics },
-                onProfile = { currentScreen = Screen.Profile }
+                onProfile = { currentScreen = Screen.Profile },
+                onEditGoal = { currentScreen = Screen.EditDailyTarget },
             )
         }
         Screen.SearchFood -> {
@@ -294,7 +297,16 @@ private fun AppContent() {
                 },
                 onSnapTap = { pendingMealType = "SNACK"; currentScreen = Screen.AiScan },
                 onSubscription = { currentScreen = Screen.Paywall },
-                onLogout = { currentScreen = Screen.Welcome }
+                onLogout = { currentScreen = Screen.Welcome },
+                onEditGoal = { currentScreen = Screen.EditDailyTarget },
+            )
+        }
+        Screen.EditDailyTarget -> {
+            val viewModel: EditDailyTargetViewModel = koinInject()
+            EditDailyTargetScreen(
+                viewModel = viewModel,
+                onBack = { currentScreen = Screen.Home },
+                onSaved = { currentScreen = Screen.Home },
             )
         }
         else -> {}

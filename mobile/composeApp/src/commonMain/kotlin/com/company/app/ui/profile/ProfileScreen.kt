@@ -37,6 +37,7 @@ fun ProfileScreen(
     onSnapTap: () -> Unit = {},
     onSubscription: () -> Unit = {},
     onLogout: () -> Unit,
+    onEditGoal: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -83,7 +84,7 @@ fun ProfileScreen(
                             streak = state.streak,
                         )
                         Spacer(Modifier.height(22.dp))
-                        AccountSection(profile = state.profile, goal = state.goal)
+                        AccountSection(profile = state.profile, goal = state.goal, onEditGoal = onEditGoal)
                         Spacer(Modifier.height(22.dp))
                         AppSection(
                             entitlement = state.entitlement,
@@ -270,7 +271,7 @@ private fun MiniStatCard(label: String, value: String, unit: String, modifier: M
 // ─── Settings sections ────────────────────────────────────────────────────────
 
 @Composable
-private fun AccountSection(profile: BodyProfileResponse?, goal: DailyGoalResponse?) {
+private fun AccountSection(profile: BodyProfileResponse?, goal: DailyGoalResponse?, onEditGoal: () -> Unit = {}) {
     val activityLabel = profile?.activityLevel
         ?.replace("_", " ")
         ?.lowercase()
@@ -298,6 +299,7 @@ private fun AccountSection(profile: BodyProfileResponse?, goal: DailyGoalRespons
             label = "Daily targets",
             detail = if (goal != null) "${goal.targetCalories.toInt()} kcal · $goalLabel" else "Not set",
             isLast = true,
+            onClick = onEditGoal,
         )
     }
 }

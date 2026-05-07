@@ -53,6 +53,7 @@ fun HomeScreen(
     onSubscription: () -> Unit = {},
     onAnalytics: () -> Unit = {},
     onProfile: () -> Unit = {},
+    onEditGoal: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
 
@@ -102,6 +103,7 @@ fun HomeScreen(
                     onAiScan = onAiScan,
                     onDelete = viewModel::deleteLog,
                     onProfile = onProfile,
+                    onEditGoal = onEditGoal,
                 )
             }
         }
@@ -132,6 +134,7 @@ private fun HomeContent(
     onAiScan: (String) -> Unit,
     onDelete: (MealLogEntry) -> Unit,
     onProfile: () -> Unit,
+    onEditGoal: () -> Unit = {},
 ) {
     LazyColumn(
         contentPadding = PaddingValues(bottom = 100.dp),
@@ -142,6 +145,7 @@ private fun HomeContent(
         item {
             CalorieDashboardCard(
                 summary = diary.summary,
+                onEditGoal = onEditGoal,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = CalSnapSpacing.screenPad),
@@ -279,7 +283,7 @@ private fun greetingFor(hour: Int, firstName: String?): String {
 // ─── Calorie dashboard card ──────────────────────────────────────────────────
 
 @Composable
-private fun CalorieDashboardCard(summary: NutritionSummary, modifier: Modifier = Modifier) {
+private fun CalorieDashboardCard(summary: NutritionSummary, onEditGoal: () -> Unit = {}, modifier: Modifier = Modifier) {
     val progress = (summary.caloriesPercent / 100f).coerceIn(0f, 1f)
     val isOver = summary.caloriesPercent > 100
     val ringColor = if (isOver) CalSnapColors.Red else CalSnapColors.Ink
@@ -318,10 +322,15 @@ private fun CalorieDashboardCard(summary: NutritionSummary, modifier: Modifier =
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
                     .background(CalSnapColors.SurfaceAlt)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onEditGoal,
+                    )
                     .padding(horizontal = 8.dp, vertical = 4.dp),
             ) {
                 Text(
-                    text = "${summary.targetCalories.toInt()} goal",
+                    text = "${summary.targetCalories.toInt()} goal ✎",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.W600,
                     color = CalSnapColors.Muted,
