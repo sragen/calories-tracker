@@ -188,6 +188,33 @@ data class DailyGoalResponse(
     val updatedAt: String = ""
 )
 
+@Serializable
+data class DailyGoalRequest(
+    val targetCalories: Double,
+    val targetProteinG: Double = 0.0,
+    val targetCarbsG: Double = 0.0,
+    val targetFatG: Double = 0.0
+)
+
+@Serializable
+data class GoalPreset(
+    val type: String,
+    val label: String,
+    val adjustmentPercent: Int,
+    val tdeeKcal: Double,
+    val targetCalories: Double,
+    val targetProteinG: Double,
+    val targetCarbsG: Double,
+    val targetFatG: Double
+)
+
+@Serializable
+data class GoalPresetsResponse(
+    val tdeeKcal: Double,
+    val presets: List<GoalPreset>,
+    val current: DailyGoalResponse
+)
+
 // ── Meal Log ──────────────────────────────────────────────────────
 
 @Serializable

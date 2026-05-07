@@ -114,6 +114,19 @@ class ApiService(
     suspend fun getDailyGoal(): DailyGoalResponse =
         client.get("$baseUrl/api/goals/daily") { auth() }.body()
 
+    suspend fun updateDailyGoal(request: DailyGoalRequest): DailyGoalResponse =
+        client.put("$baseUrl/api/goals/daily") {
+            auth()
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
+
+    suspend fun getGoalPresets(): GoalPresetsResponse =
+        client.get("$baseUrl/api/goals/daily/presets") { auth() }.body()
+
+    suspend fun resetDailyGoal(): DailyGoalResponse =
+        client.post("$baseUrl/api/goals/daily/reset") { auth() }.body()
+
     // ── Meal Logs ─────────────────────────────────────────────────
 
     suspend fun getDiary(date: String): DailySummary =
