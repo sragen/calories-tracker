@@ -5,6 +5,7 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import com.company.app.shared.data.network.ApiService
 import com.company.app.shared.data.repository.AiScanRepository
 import com.company.app.shared.data.repository.AuthRepository
+import com.company.app.shared.data.repository.UserFoodRepository
 import com.company.app.shared.data.repository.BodyProfileRepository
 import com.company.app.shared.data.repository.ConfigRepository
 import com.company.app.shared.data.repository.DailyGoalRepository
@@ -26,6 +27,7 @@ import com.company.app.ui.register.RegisterViewModel
 import com.company.app.ui.search.SearchFoodViewModel
 import com.company.app.ui.submit.SubmitFoodViewModel
 import com.company.app.ui.dailygoal.EditDailyTargetViewModel
+import com.company.app.ui.myfood.MyFoodsViewModel
 import com.company.app.ui.subscription.SubscriptionViewModel
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
@@ -65,6 +67,7 @@ val appModule = module {
     single { SubscriptionRepository(get()) }
     single { AiScanRepository(get()) }
     single { BillingRepository(api = get(), planId = PLAN_ID, productId = PRODUCT_ID) }
+    single { UserFoodRepository(get()) }
 
     // ViewModels
     factory { LoginViewModel(get()) }
@@ -78,4 +81,5 @@ val appModule = module {
     factory { SubscriptionViewModel(get<BillingRepository>(), get()) }
     factory { AnalyticsViewModel(get(), get(), get()) }
     factory { EditDailyTargetViewModel(get()) }
+    factory { MyFoodsViewModel(get()) }
 }

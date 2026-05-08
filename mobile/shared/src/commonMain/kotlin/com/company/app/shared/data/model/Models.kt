@@ -135,6 +135,65 @@ data class FoodSubmitRequest(
     val barcode: String? = null
 )
 
+// ── User Food Library ─────────────────────────────────────────────
+
+@Serializable
+data class UserFoodResponse(
+    val id: Long,
+    val foodName: String,
+    val caloriesPer100g: Double,
+    val proteinPer100g: Double,
+    val carbsPer100g: Double,
+    val fatPer100g: Double,
+    val servingSizeG: Double,
+    val totalCalories: Double,
+    val totalProteinG: Double,
+    val totalCarbsG: Double,
+    val totalFatG: Double,
+    val imageUrl: String? = null,
+    val source: String = "AI_SCAN",
+    val useCount: Int = 0,
+    val lastUsedAt: String? = null
+)
+
+@Serializable
+data class UserFoodPage(
+    val content: List<UserFoodResponse>,
+    val page: PageMeta
+)
+
+@Serializable
+data class SaveUserFoodRequest(
+    val foodName: String,
+    val caloriesPer100g: Double,
+    val proteinPer100g: Double = 0.0,
+    val carbsPer100g: Double = 0.0,
+    val fatPer100g: Double = 0.0,
+    val servingSizeG: Double = 100.0,
+    val imageUrl: String? = null,
+    val source: String = "MANUAL"
+)
+
+@Serializable
+data class QuickLogRequest(
+    val mealType: String,
+    val portionG: Double? = null,
+    val loggedAt: String
+)
+
+@Serializable
+data class QuickLogResponse(
+    val mealLogId: Long,
+    val logged: Boolean,
+    val foodName: String,
+    val mealType: String,
+    val portionG: Double,
+    val caloriesLogged: Double,
+    val proteinGLogged: Double,
+    val carbsGLogged: Double,
+    val fatGLogged: Double
+)
+
 // ── Body Profile ──────────────────────────────────────────────────
 
 @Serializable

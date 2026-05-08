@@ -189,6 +189,41 @@ class ApiService(
     suspend fun getSubscriptionStatus(): SubscriptionStatusResponse =
         client.get("$baseUrl/api/subscription/status") { auth() }.body()
 
+    // ── User Food Library ─────────────────────────────────────────
+
+    suspend fun getUserFoods(sort: String = "RECENTLY_USED", search: String? = null, page: Int = 0): UserFoodPage =
+        client.get("$baseUrl/api/user-foods") {
+            auth()
+            parameter("sort", sort)
+            search?.let { parameter("search", it) }
+            parameter("page", page)
+            parameter("size", 50)
+        }.body()
+
+    suspend fun saveUserFood(req: SaveUserFoodRequest): UserFoodResponse =
+        client.post("$baseUrl/api/user-foods") {
+            auth()
+            contentType(ContentType.Application.Json)
+            setBody(req)
+        }.body()
+
+    suspend fun updateUserFood(id: Long, req: SaveUserFoodRequest): UserFoodResponse =
+        client.put("$baseUrl/api/user-foods/$id") {
+            auth()
+            contentType(ContentType.Application.Json)
+            setBody(req)
+        }.body()
+
+    suspend fun quickLogUserFood(id: Long, req: QuickLogRequest): QuickLogResponse =
+        client.post("$baseUrl/api/user-foods/$id/log") {
+            auth()
+            contentType(ContentType.Application.Json)
+            setBody(req)
+        }.body()
+
+    suspend fun deleteUserFood(id: Long) =
+        client.delete("$baseUrl/api/user-foods/$id") { auth() }
+
     // ── AI Scan ───────────────────────────────────────────────────
 
     suspend fun analyzeAiScan(imageBytes: ByteArray, mimeType: String = "image/jpeg"): AiScanResponse =
