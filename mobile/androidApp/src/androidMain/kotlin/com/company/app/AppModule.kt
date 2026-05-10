@@ -29,8 +29,6 @@ import com.company.app.ui.submit.SubmitFoodViewModel
 import com.company.app.ui.dailygoal.EditDailyTargetViewModel
 import com.company.app.ui.myfood.MyFoodsViewModel
 import com.company.app.ui.subscription.SubscriptionViewModel
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.runBlocking
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
@@ -49,13 +47,7 @@ val appModule = module {
     single { GuestStorage(get()) }
     single { RecentFoodStorage(get()) }
 
-    single {
-        val tokenStorage: TokenStorage = get()
-        ApiService(
-            baseUrl = BASE_URL,
-            tokenProvider = { runBlocking { tokenStorage.accessToken.firstOrNull() } }
-        )
-    }
+    single { ApiService(baseUrl = BASE_URL, tokenStorage = get()) }
 
     // Repositories
     single { AuthRepository(get(), get()) }

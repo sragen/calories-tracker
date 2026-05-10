@@ -28,8 +28,6 @@ import com.company.app.ui.dailygoal.EditDailyTargetViewModel
 import com.company.app.ui.myfood.MyFoodsViewModel
 import com.company.app.ui.subscription.SubscriptionViewModel
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.runBlocking
 import okio.Path.Companion.toPath
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
@@ -59,13 +57,7 @@ val iosAppModule = module {
     single { GuestStorage(get()) }
     single { RecentFoodStorage(get()) }
 
-    single {
-        val tokenStorage: TokenStorage = get()
-        ApiService(
-            baseUrl = BASE_URL,
-            tokenProvider = { runBlocking { tokenStorage.accessToken.firstOrNull() } }
-        )
-    }
+    single { ApiService(baseUrl = BASE_URL, tokenStorage = get()) }
 
     single { AuthRepository(get(), get()) }
     single { ConfigRepository(get()) }

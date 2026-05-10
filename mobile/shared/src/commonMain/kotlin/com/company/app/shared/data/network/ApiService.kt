@@ -1,25 +1,36 @@
 package com.company.app.shared.data.network
 
 import com.company.app.shared.data.model.*
+import com.company.app.shared.storage.TokenStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.plugin
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.util.AttributeKey
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+
+private val REFRESH_MARKER = AttributeKey<Boolean>("RefreshRequest")
 
 class ApiService(
     private val baseUrl: String,
-    private val tokenProvider: () -> String?
+    private val tokenStorage: TokenStorage
 ) {
     private val client = HttpClient(platformHttpClient().engine) {
         install(ContentNegotiation) {
@@ -34,8 +45,42 @@ class ApiService(
         expectSuccess = true
     }
 
+    init {
+        // On 401: try refreshing the token once, then replay the original request
+        client.plugin(HttpSend).intercept { request ->
+            val originalCall = execute(request)
+            if (originalCall.response.status != HttpStatusCode.Unauthorized) return@intercept originalCall
+            if (request.attributes.contains(REFRESH_MARKER)) return@intercept originalCall
+
+            val refreshToken = tokenStorage.refreshToken.firstOrNull() ?: return@intercept originalCall
+            val newToken = try {
+                val refreshReq = HttpRequestBuilder().apply {
+                    method = HttpMethod.Post
+                    url("$baseUrl/api/auth/refresh")
+                    contentType(ContentType.Application.Json)
+                    setBody(RefreshRequest(refreshToken))
+                    attributes.put(REFRESH_MARKER, true)
+                }
+                val refreshCall = execute(refreshReq)
+                if (!refreshCall.response.status.isSuccess()) {
+                    tokenStorage.clearTokens()
+                    return@intercept originalCall
+                }
+                val auth = refreshCall.response.body<AuthResponse>()
+                tokenStorage.saveTokens(auth.accessToken, auth.refreshToken)
+                auth.accessToken
+            } catch (e: Exception) {
+                return@intercept originalCall
+            }
+
+            request.headers.remove(HttpHeaders.Authorization)
+            request.bearerAuth(newToken)
+            execute(request)
+        }
+    }
+
     private fun HttpRequestBuilder.auth() {
-        tokenProvider()?.let { bearerAuth(it) }
+        runBlocking { tokenStorage.accessToken.firstOrNull() }?.let { bearerAuth(it) }
     }
 
     // ── Auth ──────────────────────────────────────────────────────
