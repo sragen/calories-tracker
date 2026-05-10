@@ -138,6 +138,16 @@ private fun HomeContent(
     onProfile: () -> Unit,
     onEditGoal: () -> Unit = {},
 ) {
+    var selectedMeal by remember { mutableStateOf<Pair<String, MealLogEntry>?>(null) }
+
+    // Auto-dismiss the sheet once the deletion completes (deletingId clears).
+    LaunchedEffect(deletingId, selectedMeal) {
+        val sel = selectedMeal
+        if (sel != null && deletingId == null && diary.meals[sel.first]?.none { it.id == sel.second.id } == true) {
+            selectedMeal = null
+        }
+    }
+
     LazyColumn(
         contentPadding = PaddingValues(bottom = 100.dp),
     ) {
@@ -170,11 +180,22 @@ private fun HomeContent(
                 deletingId = deletingId,
                 onDelete = onDelete,
                 onAddFood = onAddFood,
+                onMealTap = { mt, e -> selectedMeal = mt to e },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = CalSnapSpacing.screenPad),
             )
         }
+    }
+
+    selectedMeal?.let { (mt, entry) ->
+        com.company.app.ui.diary.MealDetailSheet(
+            entry = entry,
+            mealType = mt,
+            isDeleting = deletingId == entry.id,
+            onDelete = { onDelete(entry) },
+            onDismiss = { selectedMeal = null },
+        )
     }
 }
 
@@ -506,6 +527,7 @@ private fun TodaysMealsSection(
     deletingId: Long?,
     onDelete: (MealLogEntry) -> Unit,
     onAddFood: (String) -> Unit,
+    onMealTap: (String, MealLogEntry) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val allEntries: List<Pair<String, MealLogEntry>> = listOf("BREAKFAST", "LUNCH", "DINNER", "SNACK")
@@ -543,6 +565,7 @@ private fun TodaysMealsSection(
                     mealType = mealType,
                     isDeleting = deletingId == entry.id,
                     onDelete = { onDelete(entry) },
+                    onTap = { onMealTap(mealType, entry) },
                 )
             }
         }
@@ -555,6 +578,7 @@ private fun MealRowItem(
     mealType: String,
     isDeleting: Boolean,
     onDelete: () -> Unit,
+    onTap: () -> Unit,
 ) {
     val mealLabel = mealType.lowercase().replaceFirstChar { it.uppercase() }
     val haptic = rememberHapticFeedback()
@@ -640,12 +664,19 @@ private fun MealRowItem(
                         )
                     },
                 )
+                .clickable(
+                    enabled = !isDeleting && offsetX.value == 0f,
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onTap,
+                )
                 .padding(vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             CalSnapFoodPhoto(
                 name = entry.foodItem.name,
+                imageUrl = entry.aiScanPhotoUrl,
                 size = 48.dp,
                 cornerRadius = 12.dp,
             )

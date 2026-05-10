@@ -12,20 +12,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.SubcomposeAsyncImage
 import kotlin.math.abs
 
 /**
- * Food thumbnail with gradient fallback.
- * Phase 3+: swap in Kamel/Coil for network images via imageUrl parameter.
+ * Food thumbnail. Loads [imageUrl] via Coil 3 when present; otherwise renders a
+ * deterministic gradient with the food's first letter (also used as
+ * placeholder/error state for the network image).
  *
- * @param name food name — drives fallback initial letter and gradient hue
- * @param imageUrl reserved for Phase 3 network image loading (unused in Phase 0)
- * @param size thumbnail width and height
- * @param cornerRadius thumbnail corner radius
+ * @param name drives fallback initial letter and gradient hue
+ * @param imageUrl http(s) URL of the food photo, or null for gradient-only
  */
 @Composable
 fun CalSnapFoodPhoto(
@@ -35,27 +36,36 @@ fun CalSnapFoodPhoto(
     size: Dp = 56.dp,
     cornerRadius: Dp = 14.dp,
 ) {
+    val shape = RoundedCornerShape(cornerRadius)
+    val box = modifier.size(size).clip(shape)
+
+    if (imageUrl.isNullOrBlank()) {
+        GradientFallback(name, box)
+        return
+    }
+    SubcomposeAsyncImage(
+        model = imageUrl,
+        contentDescription = name,
+        contentScale = ContentScale.Crop,
+        modifier = box,
+        loading = { GradientFallback(name, Modifier.size(size).clip(shape)) },
+        error = { GradientFallback(name, Modifier.size(size).clip(shape)) },
+    )
+}
+
+@Composable
+private fun GradientFallback(name: String, modifier: Modifier) {
     val initial = remember(name) { name.firstOrNull()?.uppercaseChar()?.toString() ?: "?" }
     val hue = remember(name) { (abs(name.hashCode()) % 360).toFloat() }
-
-    // Phase 0: gradient fallback only. imageUrl param reserved for Phase 3.
     val gradientStart = hsvToColor(hue, 0.65f, 0.72f)
     val gradientEnd   = hsvToColor((hue + 30f) % 360f, 0.70f, 0.58f)
-
     Box(
         contentAlignment = Alignment.Center,
-        modifier = modifier
-            .size(size)
-            .clip(RoundedCornerShape(cornerRadius))
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(gradientStart, gradientEnd),
-                )
-            ),
+        modifier = modifier.background(Brush.linearGradient(listOf(gradientStart, gradientEnd))),
     ) {
         Text(
             text = initial,
-            fontSize = (size.value * 0.34f).sp,
+            fontSize = 18.sp,
             fontWeight = FontWeight.W600,
             color = Color.White.copy(alpha = 0.95f),
         )

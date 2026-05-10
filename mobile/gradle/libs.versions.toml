@@ -11,6 +11,7 @@ datetime = "0.6.1"
 billing = "7.1.1"
 androidx-activity = "1.9.3"
 androidx-core = "1.15.0"
+coil = "3.0.4"
 minSdk = "26"
 targetSdk = "35"
 compileSdk = "35"
@@ -45,6 +46,10 @@ billing-ktx                 = { module = "com.android.billingclient:billing-ktx"
 # AndroidX
 androidx-activity-compose   = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 androidx-core               = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
+
+# Coil 3 (KMM image loading)
+coil-compose                = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-ktor3          = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
 
 [plugins]
 kotlin-multiplatform        = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

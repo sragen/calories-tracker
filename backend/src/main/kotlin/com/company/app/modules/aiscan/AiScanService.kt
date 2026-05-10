@@ -88,6 +88,8 @@ class AiScanService(
         }
 
         val date = LocalDate.parse(request.loggedAt)
+        // Carry the scan photo through to every meal log it produces.
+        val scanPhotoUrl = scanLogRepo.findById(request.scanLogId).orElse(null)?.imageUrl
         var count = 0
 
         for (item in request.selectedFoods) {
@@ -115,6 +117,7 @@ class AiScanService(
                 proteinGSnapshot = (foodItem.proteinPer100g * ratio).round1(),
                 carbsGSnapshot = (foodItem.carbsPer100g * ratio).round1(),
                 fatGSnapshot = (foodItem.fatPer100g * ratio).round1(),
+                aiScanPhotoUrl = scanPhotoUrl,
                 loggedAt = date
             ))
             count++

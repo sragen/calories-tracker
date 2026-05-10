@@ -461,21 +461,12 @@ private fun MyFoodCard(
 
 @Composable
 private fun FoodAvatar(name: String, imageUrl: String?) {
-    val initial = name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?"
-    Box(
-        modifier = Modifier
-            .size(56.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(CalSnapColors.SurfaceAlt),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = initial,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.W700,
-            color = CalSnapColors.Muted,
-        )
-    }
+    com.company.app.ui.components.CalSnapFoodPhoto(
+        name = name,
+        imageUrl = imageUrl,
+        size = 56.dp,
+        cornerRadius = 14.dp,
+    )
 }
 
 @Composable
