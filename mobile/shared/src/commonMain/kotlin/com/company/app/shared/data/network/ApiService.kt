@@ -3,6 +3,7 @@ package com.company.app.shared.data.network
 import com.company.app.shared.data.model.*
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
@@ -25,6 +26,11 @@ class ApiService(
             json(Json { ignoreUnknownKeys = true; isLenient = true })
         }
         install(Logging) { level = LogLevel.INFO }
+        install(HttpTimeout) {
+            connectTimeoutMillis = 15_000L
+            requestTimeoutMillis = 30_000L
+            socketTimeoutMillis  = 30_000L
+        }
         expectSuccess = true
     }
 
