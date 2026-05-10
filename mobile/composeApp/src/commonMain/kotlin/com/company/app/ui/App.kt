@@ -27,6 +27,8 @@ import com.company.app.ui.profile.ProfileViewModel
 import com.company.app.ui.register.RegisterScreen
 import com.company.app.ui.register.RegisterViewModel
 import com.company.app.ui.scan.BarcodeScannerScreen
+import com.company.app.ui.myfood.MyFoodsScreen
+import com.company.app.ui.myfood.MyFoodsViewModel
 import com.company.app.ui.search.SearchFoodScreen
 import com.company.app.ui.search.SearchFoodViewModel
 import com.company.app.ui.submit.SubmitFoodScreen
@@ -173,12 +175,18 @@ private fun AppContent() {
         }
         Screen.SearchFood -> {
             val viewModel: SearchFoodViewModel = koinInject()
+            val myFoodsViewModel: MyFoodsViewModel = koinInject()
             SearchFoodScreen(
                 viewModel = viewModel,
+                myFoodsViewModel = myFoodsViewModel,
                 initialMealType = pendingMealType,
                 onBack = { currentScreen = Screen.Home },
                 onLogSuccess = { currentScreen = Screen.Home },
-                onOpenBarcodeScanner = { currentScreen = Screen.BarcodeScanner }
+                onOpenBarcodeScanner = { currentScreen = Screen.BarcodeScanner },
+                onAiScan = {
+                    pendingMealType = "SNACK"
+                    currentScreen = Screen.AiScan
+                },
             )
         }
         Screen.BarcodeScanner -> {
@@ -299,6 +307,7 @@ private fun AppContent() {
                 onSubscription = { currentScreen = Screen.Paywall },
                 onLogout = { currentScreen = Screen.Welcome },
                 onEditGoal = { currentScreen = Screen.EditDailyTarget },
+                onMyFoods = { currentScreen = Screen.MyFoods },
             )
         }
         Screen.EditDailyTarget -> {
@@ -307,6 +316,13 @@ private fun AppContent() {
                 viewModel = viewModel,
                 onBack = { currentScreen = Screen.Home },
                 onSaved = { currentScreen = Screen.Home },
+            )
+        }
+        Screen.MyFoods -> {
+            val viewModel: MyFoodsViewModel = koinInject()
+            MyFoodsScreen(
+                viewModel = viewModel,
+                onBack = { currentScreen = Screen.Profile },
             )
         }
         else -> {}

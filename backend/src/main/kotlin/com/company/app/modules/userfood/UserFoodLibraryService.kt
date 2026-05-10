@@ -114,6 +114,19 @@ class UserFoodLibraryService(
         )
     }
 
+    fun update(userId: Long, id: Long, req: SaveUserFoodRequest): UserFoodResponse {
+        val userFood = repository.findByUserIdAndIdAndDeletedAtIsNull(userId, id)
+            ?: throw AppException.notFound("Saved food not found")
+        userFood.foodName = req.foodName
+        userFood.caloriesPer100g = req.caloriesPer100g
+        userFood.proteinPer100g = req.proteinPer100g
+        userFood.carbsPer100g = req.carbsPer100g
+        userFood.fatPer100g = req.fatPer100g
+        userFood.servingSizeG = req.servingSizeG
+        req.imageUrl?.let { userFood.imageUrl = it }
+        return repository.save(userFood).toResponse()
+    }
+
     fun delete(userId: Long, id: Long) {
         val userFood = repository.findByUserIdAndIdAndDeletedAtIsNull(userId, id)
             ?: throw AppException.notFound("Saved food not found")

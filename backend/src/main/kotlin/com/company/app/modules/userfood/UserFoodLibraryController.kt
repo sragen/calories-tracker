@@ -34,6 +34,13 @@ class UserFoodLibraryController(private val service: UserFoodLibraryService) {
         @Valid @RequestBody req: QuickLogRequest
     ) = service.log(principal.id, id, req)
 
+    @PutMapping("/{id}")
+    fun update(
+        @AuthenticationPrincipal principal: UserPrincipal,
+        @PathVariable id: Long,
+        @Valid @RequestBody req: SaveUserFoodRequest
+    ) = service.update(principal.id, id, req)
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(

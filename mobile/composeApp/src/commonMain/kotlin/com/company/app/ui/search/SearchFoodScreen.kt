@@ -25,20 +25,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.company.app.shared.data.model.FoodItem
 import com.company.app.ui.components.*
+import com.company.app.ui.myfood.LogMealTab
+import com.company.app.ui.myfood.LogMealTabStrip
+import com.company.app.ui.myfood.MyFoodsView
+import com.company.app.ui.myfood.MyFoodsViewModel
 import com.company.app.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchFoodScreen(
     viewModel: SearchFoodViewModel,
+    myFoodsViewModel: MyFoodsViewModel,
     initialMealType: String,
     onBack: () -> Unit,
     onLogSuccess: () -> Unit,
     onOpenBarcodeScanner: () -> Unit = {},
+    onAiScan: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     val listState = rememberLazyListState()
     val focusRequester = remember { FocusRequester() }
+    var activeTab by remember { mutableStateOf(LogMealTab.SEARCH) }
 
     LaunchedEffect(initialMealType) {
         if (state.mealType == "SNACK" && initialMealType != "SNACK") {
@@ -167,7 +174,33 @@ fun SearchFoodScreen(
                 }
             }
 
-            // ── Meal type chips ──────────────────────────────────────
+            // ── Tab strip ────────────────────────────────────────────
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = CalSnapSpacing.screenPad, vertical = CalSnapSpacing.sm),
+            ) {
+                LogMealTabStrip(
+                    activeTab = activeTab,
+                    onSearch = { activeTab = LogMealTab.SEARCH },
+                    onAiScan = onAiScan,
+                    onBarcode = onOpenBarcodeScanner,
+                    onMyFoods = { activeTab = LogMealTab.MY_FOODS; myFoodsViewModel.load() },
+                )
+            }
+
+            // ── My Foods tab ─────────────────────────────────────────
+            if (activeTab == LogMealTab.MY_FOODS) {
+                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    com.company.app.ui.myfood.MyFoodsView(
+                        viewModel = myFoodsViewModel,
+                        onLogSuccess = onLogSuccess,
+                    )
+                }
+            }
+
+            // ── Meal type chips (Search tab only) ────────────────────
+            if (activeTab == LogMealTab.SEARCH) {
             LazyRow(
                 contentPadding = PaddingValues(horizontal = CalSnapSpacing.screenPad, vertical = CalSnapSpacing.xs),
                 horizontalArrangement = Arrangement.spacedBy(CalSnapSpacing.sm),
@@ -280,6 +313,7 @@ fun SearchFoodScreen(
                     }
                 }
             }
+            } // end if (activeTab == SEARCH)
         }
 
         // Error snackbar
