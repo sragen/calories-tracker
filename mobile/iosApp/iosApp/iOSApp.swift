@@ -9,7 +9,9 @@ struct iOSApp: App {
 
     var body: some Scene {
         WindowGroup {
+            // .container ignores notch + home indicator; keyboard insets still apply.
             ContentView()
+                .ignoresSafeArea(.container, edges: .all)
         }
     }
 }
