@@ -16,10 +16,8 @@ import io.ktor.client.request.forms.formData
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.util.AttributeKey
 import kotlinx.coroutines.flow.firstOrNull
@@ -54,22 +52,17 @@ class ApiService(
 
             val refreshToken = tokenStorage.refreshToken.firstOrNull() ?: return@intercept originalCall
             val newToken = try {
-                val refreshReq = HttpRequestBuilder().apply {
-                    method = HttpMethod.Post
-                    url("$baseUrl/api/auth/refresh")
+                // Use client.post so ContentNegotiation serializes the body;
+                // REFRESH_MARKER prevents this same interceptor from recursing.
+                val auth: AuthResponse = client.post("$baseUrl/api/auth/refresh") {
                     contentType(ContentType.Application.Json)
                     setBody(RefreshRequest(refreshToken))
                     attributes.put(REFRESH_MARKER, true)
-                }
-                val refreshCall = execute(refreshReq)
-                if (!refreshCall.response.status.isSuccess()) {
-                    tokenStorage.clearTokens()
-                    return@intercept originalCall
-                }
-                val auth = refreshCall.response.body<AuthResponse>()
+                }.body()
                 tokenStorage.saveTokens(auth.accessToken, auth.refreshToken)
                 auth.accessToken
             } catch (e: Exception) {
+                tokenStorage.clearTokens()
                 return@intercept originalCall
             }
 
