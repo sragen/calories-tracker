@@ -1,32 +1,20 @@
 package com.company.app.ui.platform
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import platform.UIKit.UIStatusBarStyle
-import platform.UIKit.UIStatusBarStyleDarkContent
-import platform.UIKit.UIStatusBarStyleLightContent
-import platform.UIKit.UIViewController
 
-// Single source of truth for the current iOS status bar style.
-// The host UIViewController (see MainViewController.kt) reads from here
-// inside its preferredStatusBarStyle() override.
-internal object StatusBarController {
-    var rootVc: UIViewController? = null
-    var style: UIStatusBarStyle = UIStatusBarStyleDarkContent
-}
-
+// iOS status bar style is controlled globally by Info.plist (UIStatusBarStyle =
+// UIStatusBarStyleDarkContent, UIViewControllerBasedStatusBarAppearance = false).
+//
+// Per-screen runtime override would require subclassing UIViewController and overriding
+// preferredStatusBarStyle, but Kotlin/Native UIKit bindings don't expose
+// addChildViewController:/didMoveToParentViewController: in a way that lets us host the
+// internal Compose VC without breaking its lifecycle (it crashes on viewWillAppear when
+// returning from a presented modal like the camera picker).
+//
+// Workaround for screens with dark backgrounds (AI Scan camera, Paywall hero): add a
+// subtle darkening gradient strip behind the status bar inside the Compose layout so the
+// dark icons stay readable.
 @Composable
 actual fun SetStatusBarStyle(style: StatusBarStyle) {
-    DisposableEffect(style) {
-        val previous = StatusBarController.style
-        StatusBarController.style = when (style) {
-            StatusBarStyle.Dark -> UIStatusBarStyleDarkContent
-            StatusBarStyle.Light -> UIStatusBarStyleLightContent
-        }
-        StatusBarController.rootVc?.setNeedsStatusBarAppearanceUpdate()
-        onDispose {
-            StatusBarController.style = previous
-            StatusBarController.rootVc?.setNeedsStatusBarAppearanceUpdate()
-        }
-    }
+    // No-op on iOS for now.
 }
