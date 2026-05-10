@@ -96,7 +96,9 @@ private fun PaywallContent(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(ink),
+            .background(ink)
+            .statusBarsPadding()
+            .navigationBarsPadding(),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Hero header with radial gradient

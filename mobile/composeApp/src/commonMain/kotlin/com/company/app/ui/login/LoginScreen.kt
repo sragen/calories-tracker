@@ -47,7 +47,9 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CalSnapColors.Background),
+            .background(CalSnapColors.Background)
+            .statusBarsPadding()
+            .navigationBarsPadding(),
         contentAlignment = Alignment.Center,
     ) {
         Column(

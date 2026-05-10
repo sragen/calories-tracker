@@ -44,6 +44,8 @@ fun OnboardingActivityScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(CalSnapColors.Background)
+            .statusBarsPadding()
+            .navigationBarsPadding()
             .padding(horizontal = CalSnapSpacing.screenPad),
     ) {
         Spacer(Modifier.height(CalSnapSpacing.xxl))

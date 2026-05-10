@@ -50,7 +50,9 @@ fun RegisterScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CalSnapColors.Background),
+            .background(CalSnapColors.Background)
+            .statusBarsPadding()
+            .navigationBarsPadding(),
     ) {
         Column(
             modifier = Modifier

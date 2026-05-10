@@ -48,7 +48,9 @@ fun AnalyticsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CalSnapColors.Background),
+            .background(CalSnapColors.Background)
+            .statusBarsPadding()
+            .navigationBarsPadding(),
     ) {
         when {
             state.isLoading -> {

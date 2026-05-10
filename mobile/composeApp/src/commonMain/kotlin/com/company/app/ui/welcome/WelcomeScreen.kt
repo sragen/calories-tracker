@@ -33,7 +33,7 @@ fun WelcomeScreen(
     onLogin: () -> Unit,
     onRestore: () -> Unit = {},
 ) {
-    Box(modifier = Modifier.fillMaxSize().background(CalSnapColors.Background)) {
+    Box(modifier = Modifier.fillMaxSize().background(CalSnapColors.Background).statusBarsPadding().navigationBarsPadding()) {
         Column(modifier = Modifier.fillMaxSize()) {
 
             // ── Hero food photo (460dp) ──────────────────────────────────────

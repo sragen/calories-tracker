@@ -38,6 +38,8 @@ fun OnboardingBodyScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(CalSnapColors.Surface)
+            .statusBarsPadding()
+            .navigationBarsPadding()
             .padding(horizontal = CalSnapSpacing.screenPad),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

@@ -34,6 +34,8 @@ fun OnboardingPlanRevealScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(CalSnapColors.Surface)
+            .statusBarsPadding()
+            .navigationBarsPadding()
             .padding(horizontal = CalSnapSpacing.screenPad),
     ) {
         Spacer(Modifier.height(CalSnapSpacing.xxl))

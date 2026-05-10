@@ -54,7 +54,9 @@ fun MyFoodsScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CalSnapColors.Surface),
+            .background(CalSnapColors.Surface)
+            .statusBarsPadding()
+            .navigationBarsPadding(),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
 
