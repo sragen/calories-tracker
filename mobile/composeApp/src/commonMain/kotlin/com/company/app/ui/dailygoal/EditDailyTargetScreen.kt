@@ -751,23 +751,27 @@ private fun KeypadSheet(
     val suffix = if (field == EditingField.CALORIES) "kcal" else "g"
     val isCalories = field == EditingField.CALORIES
 
+    // Hoist the cursor blink out of the layout tree so it doesn't recompose
+    // with every keypadBuffer change.
+    val infiniteTransition = rememberInfiniteTransition(label = "cursor")
+    val cursorAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
+        label = "cursorAlpha",
+    )
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
             .padding(bottom = 8.dp),
     ) {
-        // Value display card (cream surface)
+        // Value display card
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
-                .shadow(
-                    elevation = 4.dp,
-                    shape = RoundedCornerShape(24.dp),
-                    ambientColor = CardShadowAmbient,
-                    spotColor = CardShadowSpot,
-                )
                 .clip(RoundedCornerShape(24.dp))
                 .background(Color.White)
                 .border(1.dp, CalSnapColors.Border, RoundedCornerShape(24.dp))
@@ -785,22 +789,17 @@ private fun KeypadSheet(
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.Center) {
                 Text(
                     text = if (buffer.isEmpty()) "0" else buffer,
-                    fontSize = 64.sp,
+                    fontSize = 56.sp,
                     fontWeight = FontWeight.W700,
                     color = CalSnapColors.Ink,
-                    letterSpacing = (-2.5).sp,
-                    lineHeight = 64.sp,
-                )
-                val infiniteTransition = rememberInfiniteTransition()
-                val cursorAlpha by infiniteTransition.animateFloat(
-                    initialValue = 1f, targetValue = 0f,
-                    animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
+                    letterSpacing = (-2).sp,
+                    lineHeight = 60.sp,
                 )
                 Box(
                     modifier = Modifier
-                        .padding(start = 2.dp, bottom = 6.dp)
+                        .padding(start = 2.dp, bottom = 8.dp)
                         .width(2.dp)
-                        .height(48.dp)
+                        .height(40.dp)
                         .background(CalSnapColors.Red.copy(alpha = cursorAlpha)),
                 )
                 Spacer(Modifier.width(8.dp))
@@ -840,39 +839,34 @@ private fun KeypadSheet(
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
 
-        // Done button
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.End,
-        ) {
-            Box(
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background(CalSnapColors.Red)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onDone,
-                    )
-                    .padding(horizontal = 18.dp, vertical = 8.dp),
-            ) {
-                Text("Done", fontSize = 13.sp, fontWeight = FontWeight.W700, color = Color.White)
-            }
-        }
-
-        Spacer(Modifier.height(10.dp))
-
-        // Keypad — flat iOS-style on cream background
+        // Keypad — flat iOS-style on white background; Done lives inside.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.White)
-                .border(width = 0.dp, color = CalSnapColors.Divider)
-                .padding(horizontal = 8.dp, vertical = 14.dp),
+                .padding(horizontal = 8.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(end = 8.dp),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(CalSnapColors.Red)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onDone,
+                        )
+                        .padding(horizontal = 18.dp, vertical = 8.dp),
+                ) {
+                    Text("Done", fontSize = 13.sp, fontWeight = FontWeight.W700, color = Color.White)
+                }
+            }
             val keys = listOf(
                 listOf("1", "2", "3"),
                 listOf("4", "5", "6"),
