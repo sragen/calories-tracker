@@ -14,25 +14,22 @@ import androidx.compose.ui.*
 import androidx.compose.ui.draw.*
 import androidx.compose.ui.geometry.*
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import com.company.app.shared.data.model.GoalPreset
 import com.company.app.ui.components.CalSnapIcon
-import com.company.app.ui.platform.isIosPlatform
 import com.company.app.ui.theme.*
 import kotlinx.coroutines.launch
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 
-// ── Design tokens from screens-phase3 ────────────────────────────────────────
+// ── Design tokens from screens-phase3-classic.jsx ────────────────────────────
 
 private val ProteinColor = Color(0xFFE63946)
 private val CarbColor    = Color(0xFFF4A23A)
 private val FatColor     = Color(0xFF5A8DEF)
+
+private val CardShadowAmbient = Color(0x0A140F08)
+private val CardShadowSpot    = Color(0x12140F08)
 
 private data class PresetMeta(
     val type: String,
@@ -44,12 +41,12 @@ private data class PresetMeta(
 )
 
 private val PRESET_META = listOf(
-    PresetMeta("CUT",      "🔥", "Cut",      "Deficit ~20%", "Weight loss",  Color(0xFFE63946)),
-    PresetMeta("MAINTAIN", "⚖️", "Maintain", "TDEE",          "Hold weight",  Color(0xFF0E0E0E)),
-    PresetMeta("BULK",     "💪", "Bulk",     "Surplus ~15%",  "Muscle gain",  Color(0xFF5A8DEF)),
+    PresetMeta("CUT",      "🔥", "Cut",      "Deficit ~20%", "Weight loss", Color(0xFFE63946)),
+    PresetMeta("MAINTAIN", "⚖️", "Maintain", "TDEE",         "Hold weight", Color(0xFF0E0E0E)),
+    PresetMeta("BULK",     "💪", "Bulk",     "Surplus ~15%", "Muscle gain", Color(0xFF5A8DEF)),
 )
 
-// ── Screen ────────────────────────────────────────────────────────────────────
+// ── Screen entry ──────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,7 +59,6 @@ fun EditDailyTargetScreen(
     val haptic = com.company.app.ui.platform.rememberHapticFeedback()
     val scope = rememberCoroutineScope()
 
-    // Keypad bottom sheet state
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val showSheet = state.editingField != null
 
@@ -71,10 +67,11 @@ fun EditDailyTargetScreen(
         else scope.launch { sheetState.hide() }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Ambient gradient background (LiquidBg)
-        AmbientBackground()
-
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(CalSnapColors.Surface),
+    ) {
         when {
             state.isLoading -> CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
@@ -84,12 +81,11 @@ fun EditDailyTargetScreen(
             else -> MainContent(state, viewModel, onBack, onSaved, haptic)
         }
 
-        // Keypad bottom sheet
         if (showSheet) {
             ModalBottomSheet(
                 onDismissRequest = viewModel::closeKeypad,
                 sheetState = sheetState,
-                containerColor = if (isIosPlatform) Color.White.copy(alpha = 0.95f) else Color.White,
+                containerColor = Color.White,
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 dragHandle = {
                     Box(
@@ -110,67 +106,10 @@ fun EditDailyTargetScreen(
                     buffer = state.keypadBuffer,
                     onKey = viewModel::onKeypadInput,
                     onQuickAdjust = viewModel::quickAdjust,
-                    onDone = {
-                        viewModel.confirmKeypad()
-                        haptic.light()
-                    },
+                    onDone = { viewModel.confirmKeypad(); haptic.light() },
                 )
             }
         }
-    }
-}
-
-// ── Ambient background ────────────────────────────────────────────────────────
-
-@Composable
-private fun AmbientBackground() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color(0xFFFFF8F0), Color(0xFFF7F0E4), Color(0xFFFBEFE0)),
-                )
-            )
-    ) {
-        // Red blob — top left
-        Box(
-            modifier = Modifier
-                .offset(x = (-60).dp, y = (-40).dp)
-                .size(260.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(Color(0xFFE63946).copy(alpha = 0.18f), Color.Transparent)
-                    ),
-                    shape = CircleShape,
-                )
-        )
-        // Amber blob — top right
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 60.dp, y = 30.dp)
-                .size(200.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(Color(0xFFF4A23A).copy(alpha = 0.16f), Color.Transparent)
-                    ),
-                    shape = CircleShape,
-                )
-        )
-        // Blue blob — bottom
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .offset(y = 80.dp)
-                .size(300.dp)
-                .background(
-                    Brush.radialGradient(
-                        colors = listOf(Color(0xFF5A8DEF).copy(alpha = 0.14f), Color.Transparent)
-                    ),
-                    shape = CircleShape,
-                )
-        )
     }
 }
 
@@ -185,27 +124,22 @@ private fun MainContent(
     haptic: com.company.app.ui.platform.HapticFeedback,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        // Header
         GoalsHeader(onBack = onBack)
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = 32.dp),
+                .padding(bottom = 30.dp),
         ) {
-            Spacer(Modifier.height(8.dp))
-
-            // Hero donut + macro summary
+            Spacer(Modifier.height(4.dp))
             HeroDonutCard(state)
-
-            Spacer(Modifier.height(20.dp))
 
             // Presets section
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(start = 20.dp, end = 20.dp, top = 22.dp, bottom = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -214,26 +148,29 @@ private fun MainContent(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.W700,
                     color = CalSnapColors.Muted,
-                    letterSpacing = 0.8.sp,
+                    letterSpacing = 1.sp,
                 )
-                GlassPill(
+                Text(
                     text = "Reset",
-                    onClick = { viewModel.reset(); haptic.light() },
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.W600,
+                    color = CalSnapColors.Red,
+                    modifier = Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { viewModel.reset(); haptic.light() },
+                    ),
                 )
             }
-            Spacer(Modifier.height(10.dp))
             PresetCards(state, onSelect = { preset ->
-                viewModel.selectPreset(preset)
-                haptic.light()
+                viewModel.selectPreset(preset); haptic.light()
             })
 
-            Spacer(Modifier.height(24.dp))
-
-            // Fine-tune section
+            // Fine tune section
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -242,7 +179,7 @@ private fun MainContent(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.W700,
                     color = CalSnapColors.Muted,
-                    letterSpacing = 0.8.sp,
+                    letterSpacing = 1.sp,
                 )
                 Text(
                     text = "Tap a number to edit",
@@ -250,7 +187,6 @@ private fun MainContent(
                     color = CalSnapColors.Mute2,
                 )
             }
-            Spacer(Modifier.height(10.dp))
             Column(
                 modifier = Modifier.padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -297,28 +233,25 @@ private fun MainContent(
                 )
             }
 
-            Spacer(Modifier.height(28.dp))
-
-            // Save button
+            // Save CTA
             Box(
                 modifier = Modifier
-                    .padding(horizontal = 20.dp)
+                    .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 16.dp)
                     .fillMaxWidth()
                     .height(56.dp)
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(Color(0xFFE63946), Color(0xFFC42E3A)),
-                        )
+                    .shadow(
+                        elevation = 12.dp,
+                        shape = RoundedCornerShape(28.dp),
+                        ambientColor = CalSnapColors.Red.copy(alpha = 0.35f),
+                        spotColor    = CalSnapColors.Red.copy(alpha = 0.35f),
                     )
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(CalSnapColors.Red)
                     .clickable(
                         enabled = !state.isSaving,
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = {
-                            haptic.medium()
-                            viewModel.save(onSuccess = onSaved)
-                        },
+                        onClick = { haptic.medium(); viewModel.save(onSuccess = onSaved) },
                     ),
                 contentAlignment = Alignment.Center,
             ) {
@@ -334,7 +267,6 @@ private fun MainContent(
                         fontSize = 16.sp,
                         fontWeight = FontWeight.W700,
                         color = Color.White,
-                        letterSpacing = (-0.2).sp,
                     )
                 }
             }
@@ -350,21 +282,13 @@ private fun GoalsHeader(onBack: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .statusBarsPadding()
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // Glass back button
         Box(
             modifier = Modifier
-                .size(38.dp)
-                .clip(CircleShape)
-                .background(if (isIosPlatform) Color.White.copy(alpha = 0.55f) else CalSnapColors.SurfaceAlt)
-                .border(
-                    width = 1.dp,
-                    color = if (isIosPlatform) Color.White.copy(alpha = 0.8f) else Color.Transparent,
-                    shape = CircleShape,
-                )
+                .size(24.dp)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -372,24 +296,37 @@ private fun GoalsHeader(onBack: () -> Unit) {
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            CalSnapIcon(name = "chev-l", size = 18.dp, color = CalSnapColors.Ink, strokeWidth = 2.2f)
+            CalSnapIcon(name = "chev-l", size = 24.dp, color = CalSnapColors.Ink, strokeWidth = 2f)
         }
 
         Text(
             text = "Daily goals",
-            fontSize = 17.sp,
+            fontSize = 22.sp,
             fontWeight = FontWeight.W700,
             color = CalSnapColors.Ink,
-            letterSpacing = (-0.3).sp,
+            letterSpacing = (-0.4).sp,
             modifier = Modifier.weight(1f),
         )
 
-        // "Auto · TDEE" pill
-        GlassPill(text = "Auto · TDEE")
+        // Auto · TDEE pill (solid white with border)
+        Box(
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(Color.White)
+                .border(width = 1.dp, color = CalSnapColors.Border, shape = CircleShape)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+        ) {
+            Text(
+                text = "Auto · TDEE",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.W700,
+                color = CalSnapColors.Muted,
+            )
+        }
     }
 }
 
-// ── Donut card ────────────────────────────────────────────────────────────────
+// ── Hero donut card (solid white) ─────────────────────────────────────────────
 
 @Composable
 private fun HeroDonutCard(state: EditDailyTargetState) {
@@ -399,73 +336,81 @@ private fun HeroDonutCard(state: EditDailyTargetState) {
     val ff = if (total2 > 0) (state.fatG * 9 / total2).toFloat() else 0.23f
     val macroKcal = (state.proteinG * 4 + state.carbsG * 4 + state.fatG * 9).toInt()
     val isOver = macroKcal > state.calories.toInt() + 10
+    val selectedMeta = PRESET_META.find { it.type == state.selectedPresetType }
 
-    GlassCard(
+    Column(
         modifier = Modifier
+            .padding(horizontal = 20.dp)
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(24.dp),
+                ambientColor = CardShadowAmbient,
+                spotColor    = CardShadowSpot,
+            )
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color.White)
+            .border(width = 1.dp, color = CalSnapColors.Border, shape = RoundedCornerShape(24.dp))
+            .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 22.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // Donut
-            MacroDonut(
-                size = 150.dp,
-                stroke = 20.dp,
+            ClassicDonut(
+                size = 140.dp,
+                stroke = 18.dp,
                 proteinFrac = pf,
                 carbFrac = cf,
                 fatFrac = ff,
                 isOver = isOver,
-                targetKcal = state.calories.toInt(),
             )
 
-            // Right side legend
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                val selectedMeta = PRESET_META.find { it.type == state.selectedPresetType }
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = selectedMeta?.tag?.uppercase() ?: "CUSTOM",
+                    text = (selectedMeta?.tag ?: "Custom").uppercase(),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.W700,
                     color = CalSnapColors.Muted,
                     letterSpacing = 0.7.sp,
                 )
-                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 2.dp)) {
                     Text(
                         text = state.calories.toInt().toString(),
-                        fontSize = 28.sp,
+                        fontSize = 30.sp,
                         fontWeight = FontWeight.W700,
                         color = CalSnapColors.Ink,
-                        letterSpacing = (-0.8).sp,
-                        lineHeight = 28.sp,
+                        letterSpacing = (-0.9).sp,
+                        lineHeight = 33.sp,
                     )
                     Text(
                         text = " kcal",
                         fontSize = 14.sp,
                         color = CalSnapColors.Muted,
                         fontWeight = FontWeight.W500,
-                        modifier = Modifier.padding(bottom = 2.dp),
+                        modifier = Modifier.padding(bottom = 3.dp),
                     )
                 }
-                Spacer(Modifier.height(4.dp))
-                MacroLegendRow(label = "P", value = state.proteinG.toInt(), color = ProteinColor, pct = (pf * 100).toInt())
-                MacroLegendRow(label = "C", value = state.carbsG.toInt(), color = CarbColor,    pct = (cf * 100).toInt())
-                MacroLegendRow(label = "F", value = state.fatG.toInt(),   color = FatColor,      pct = (ff * 100).toInt())
+                Spacer(Modifier.height(12.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    MacroLegendRow("Protein", state.proteinG.toInt(), ProteinColor, (pf * 100).toInt())
+                    MacroLegendRow("Carbs",   state.carbsG.toInt(),   CarbColor,    (cf * 100).toInt())
+                    MacroLegendRow("Fat",     state.fatG.toInt(),     FatColor,     (ff * 100).toInt())
+                }
             }
         }
 
-        // Over-target warning
         if (isOver) {
             Spacer(Modifier.height(14.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(Color(0xFFD08A24).copy(alpha = 0.12f))
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFFEF3E0))
                     .border(
                         width = 1.dp,
-                        color = Color(0xFFD08A24).copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(14.dp),
+                        color = CalSnapColors.Warn.copy(alpha = 0.25f),
+                        shape = RoundedCornerShape(12.dp),
                     )
                     .padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -474,7 +419,7 @@ private fun HeroDonutCard(state: EditDailyTargetState) {
                 Box(
                     modifier = Modifier
                         .size(22.dp)
-                        .background(Color(0xFFD08A24), CircleShape),
+                        .background(CalSnapColors.Warn, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text("!", fontSize = 13.sp, fontWeight = FontWeight.W700, color = Color.White)
@@ -499,8 +444,8 @@ private fun MacroLegendRow(label: String, value: Int, color: Color, pct: Int) {
     ) {
         Box(
             modifier = Modifier
-                .size(14.dp)
-                .clip(RoundedCornerShape(4.dp))
+                .size(10.dp)
+                .clip(RoundedCornerShape(3.dp))
                 .background(color),
         )
         Text(
@@ -508,14 +453,14 @@ private fun MacroLegendRow(label: String, value: Int, color: Color, pct: Int) {
             fontSize = 12.sp,
             color = CalSnapColors.Muted,
             fontWeight = FontWeight.W600,
-            modifier = Modifier.width(16.dp),
+            modifier = Modifier.width(50.dp),
         )
         Text(
             text = "${value}g",
             fontSize = 12.sp,
             fontWeight = FontWeight.W700,
             color = CalSnapColors.Ink,
-            modifier = Modifier.width(38.dp),
+            modifier = Modifier.width(40.dp),
         )
         Text(
             text = "$pct%",
@@ -526,19 +471,17 @@ private fun MacroLegendRow(label: String, value: Int, color: Color, pct: Int) {
     }
 }
 
-// ── Macro donut (3-arc canvas) ────────────────────────────────────────────────
+// ── Classic donut: flat 3-arc canvas ──────────────────────────────────────────
 
 @Composable
-private fun MacroDonut(
+private fun ClassicDonut(
     size: Dp,
     stroke: Dp,
     proteinFrac: Float,
     carbFrac: Float,
     fatFrac: Float,
     isOver: Boolean,
-    targetKcal: Int,
 ) {
-    // Animate arc fractions
     val animP by animateFloatAsState(proteinFrac, animationSpec = tween(600, easing = FastOutSlowInEasing))
     val animC by animateFloatAsState(carbFrac,    animationSpec = tween(600, easing = FastOutSlowInEasing))
     val animF by animateFloatAsState(fatFrac,     animationSpec = tween(600, easing = FastOutSlowInEasing))
@@ -549,8 +492,8 @@ private fun MacroDonut(
             val r = (size.toPx() - strokePx) / 2f
             val topLeft = Offset(strokePx / 2f, strokePx / 2f)
             val arcSize = Size(r * 2f, r * 2f)
+            val gapDeg = 2f
 
-            // Glow track (soft blur effect via alpha layering)
             drawArc(
                 color = Color(0xFFF1ECE2),
                 startAngle = -90f,
@@ -563,7 +506,7 @@ private fun MacroDonut(
 
             var acc = -90f
             fun arc(frac: Float, color: Color) {
-                val sweep = frac * 360f
+                val sweep = (frac * 360f - gapDeg).coerceAtLeast(0f)
                 if (sweep > 0f) {
                     drawArc(
                         color = color,
@@ -575,30 +518,34 @@ private fun MacroDonut(
                         style = Stroke(width = strokePx, cap = StrokeCap.Butt),
                     )
                 }
-                acc += sweep
+                acc += frac * 360f
             }
-
             arc(animP, ProteinColor)
             arc(animC, CarbColor)
             arc(animF, FatColor)
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            if (isOver) {
-                Text("Over by", fontSize = 9.sp, fontWeight = FontWeight.W700, color = CalSnapColors.Warn, letterSpacing = 0.6.sp)
-                Text("+${((proteinFrac + carbFrac + fatFrac) * targetKcal - targetKcal).toInt().coerceAtLeast(0)}",
-                    fontSize = 28.sp, fontWeight = FontWeight.W700, color = CalSnapColors.Warn, letterSpacing = (-0.8).sp)
-                Text("kcal vs target", fontSize = 9.sp, color = CalSnapColors.Muted)
-            } else {
-                Text("Total", fontSize = 9.sp, fontWeight = FontWeight.W700, color = CalSnapColors.Muted, letterSpacing = 0.6.sp)
-                Text(targetKcal.toString(), fontSize = 28.sp, fontWeight = FontWeight.W700, color = CalSnapColors.Ink, letterSpacing = (-1).sp)
-                Text("kcal target", fontSize = 9.sp, color = CalSnapColors.Muted)
-            }
+            Text(
+                text = if (isOver) "OVER" else "MACROS",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.W700,
+                color = CalSnapColors.Muted,
+                letterSpacing = 0.6.sp,
+            )
+            Text(
+                text = "${((proteinFrac + carbFrac + fatFrac) * 100).toInt()}%",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.W700,
+                color = if (isOver) CalSnapColors.Warn else CalSnapColors.Ink,
+                letterSpacing = (-0.5).sp,
+                modifier = Modifier.padding(top = 1.dp),
+            )
         }
     }
 }
 
-// ── Preset cards ──────────────────────────────────────────────────────────────
+// ── Preset cards (horizontal scroll) ──────────────────────────────────────────
 
 @Composable
 private fun PresetCards(state: EditDailyTargetState, onSelect: (GoalPreset) -> Unit) {
@@ -610,13 +557,7 @@ private fun PresetCards(state: EditDailyTargetState, onSelect: (GoalPreset) -> U
             val meta = PRESET_META.find { it.type == preset.type }
                 ?: PresetMeta(preset.type, "⚙️", preset.label, "", "", CalSnapColors.Ink)
             val isSelected = state.selectedPresetType == preset.type
-
-            PresetCard(
-                meta = meta,
-                preset = preset,
-                isSelected = isSelected,
-                onClick = { onSelect(preset) },
-            )
+            PresetCard(meta = meta, preset = preset, isSelected = isSelected, onClick = { onSelect(preset) })
         }
     }
 }
@@ -628,94 +569,87 @@ private fun PresetCard(
     isSelected: Boolean,
     onClick: () -> Unit,
 ) {
-    val borderColor = if (isSelected) meta.accent else Color.White.copy(alpha = 0.7f)
+    val borderColor = if (isSelected) meta.accent else CalSnapColors.Border
     val borderWidth = if (isSelected) 2.dp else 1.dp
+    val shadowColor = if (isSelected) meta.accent.copy(alpha = 0.13f) else CardShadowSpot
+    val shadowElevation = if (isSelected) 12.dp else 6.dp
 
-    Column(
+    Box(
         modifier = Modifier
             .width(140.dp)
-            .clip(RoundedCornerShape(22.dp))
-            .background(if (isIosPlatform && !isSelected) Color.White.copy(alpha = 0.55f) else Color.White)
-            .border(width = borderWidth, color = borderColor, shape = RoundedCornerShape(22.dp))
             .shadow(
-                elevation = if (isSelected) 8.dp else 4.dp,
-                shape = RoundedCornerShape(22.dp),
-                ambientColor = if (isSelected) meta.accent.copy(alpha = 0.2f) else Color(0x08140F08),
-                spotColor  = if (isSelected) meta.accent.copy(alpha = 0.15f) else Color(0x10140F08),
+                elevation = shadowElevation,
+                shape = RoundedCornerShape(20.dp),
+                ambientColor = shadowColor,
+                spotColor = shadowColor,
             )
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(20.dp))
+            .background(Color.White)
+            .border(width = borderWidth, color = borderColor, shape = RoundedCornerShape(20.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick,
             )
-            .padding(14.dp),
+            .padding(start = 14.dp, end = 14.dp, top = 14.dp, bottom = 16.dp),
     ) {
-        // Selected check
         if (isSelected) {
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopEnd) {
-                Box(
-                    modifier = Modifier
-                        .size(22.dp)
-                        .background(meta.accent, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CalSnapIcon(name = "check", size = 12.dp, color = Color.White, strokeWidth = 3f)
-                }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(22.dp)
+                    .background(meta.accent, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                CalSnapIcon(name = "check", size = 12.dp, color = Color.White, strokeWidth = 3f)
             }
-            Spacer(Modifier.height(6.dp))
-        } else {
-            Spacer(Modifier.height(28.dp))
         }
 
-        // Icon container
-        Box(
-            modifier = Modifier
-                .size(52.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(meta.accent.copy(alpha = 0.12f))
-                .border(
-                    width = 1.dp,
-                    color = meta.accent.copy(alpha = 0.2f),
-                    shape = RoundedCornerShape(16.dp),
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(text = meta.icon, fontSize = 24.sp)
+        Column {
+            // Icon tile (accent at 8% alpha background)
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(meta.accent.copy(alpha = 0.08f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(text = meta.icon, fontSize = 24.sp)
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = meta.name,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.W700,
+                color = CalSnapColors.Ink,
+                letterSpacing = (-0.3).sp,
+            )
+            Text(
+                text = meta.sub,
+                fontSize = 11.sp,
+                color = CalSnapColors.Muted,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = preset.targetCalories.toInt().toString(),
+                fontSize = 22.sp,
+                fontWeight = FontWeight.W700,
+                color = CalSnapColors.Ink,
+                letterSpacing = (-0.6).sp,
+            )
+            Text(
+                text = "KCAL/DAY",
+                fontSize = 10.sp,
+                color = CalSnapColors.Mute2,
+                fontWeight = FontWeight.W600,
+                letterSpacing = 0.5.sp,
+            )
         }
-        Spacer(Modifier.height(12.dp))
-
-        Text(
-            text = meta.name,
-            fontSize = 17.sp,
-            fontWeight = FontWeight.W700,
-            color = CalSnapColors.Ink,
-            letterSpacing = (-0.3).sp,
-        )
-        Text(
-            text = meta.sub,
-            fontSize = 11.sp,
-            color = CalSnapColors.Muted,
-        )
-        Spacer(Modifier.height(10.dp))
-        Text(
-            text = preset.targetCalories.toInt().toString(),
-            fontSize = 22.sp,
-            fontWeight = FontWeight.W700,
-            color = CalSnapColors.Ink,
-            letterSpacing = (-0.6).sp,
-        )
-        Text(
-            text = "kcal/day",
-            fontSize = 10.sp,
-            color = CalSnapColors.Mute2,
-            fontWeight = FontWeight.W600,
-            letterSpacing = 0.5.sp,
-        )
     }
 }
 
-// ── MacroInput with slider ────────────────────────────────────────────────────
+// ── Macro input row (solid white + progress bar) ──────────────────────────────
 
 @Composable
 private fun MacroInput(
@@ -729,88 +663,63 @@ private fun MacroInput(
     modifier: Modifier = Modifier,
 ) {
     val pct = (value.toFloat() / max).coerceIn(0f, 1f)
+    val borderColor = if (isFocused) accent else CalSnapColors.Border
+    val borderWidth = if (isFocused) 2.dp else 1.dp
 
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(if (isFocused) Color.White else if (isIosPlatform) Color.White.copy(alpha = 0.55f) else Color.White)
-            .border(
-                width = if (isFocused) 2.dp else 1.dp,
-                color = if (isFocused) accent else Color.White.copy(alpha = 0.7f),
-                shape = RoundedCornerShape(18.dp),
-            )
             .shadow(
-                elevation = if (isFocused) 6.dp else 2.dp,
-                shape = RoundedCornerShape(18.dp),
-                ambientColor = if (isFocused) accent.copy(alpha = 0.2f) else Color(0x06140F08),
-                spotColor  = if (isFocused) accent.copy(alpha = 0.15f) else Color(0x08140F08),
+                elevation = if (isFocused) 6.dp else 4.dp,
+                shape = RoundedCornerShape(16.dp),
+                ambientColor = CardShadowAmbient,
+                spotColor = CardShadowSpot,
             )
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White)
+            .border(width = borderWidth, color = borderColor, shape = RoundedCornerShape(16.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick,
             )
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Bottom,
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .background(accent, CircleShape),
+            Text(
+                text = label.uppercase(),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.W600,
+                color = CalSnapColors.Muted,
+                letterSpacing = 0.7.sp,
+            )
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = value.toString(),
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.W700,
+                    color = CalSnapColors.Ink,
+                    letterSpacing = (-0.6).sp,
+                    lineHeight = 22.sp,
                 )
                 Text(
-                    text = label.uppercase(),
+                    text = suffix,
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.W700,
-                    color = CalSnapColors.Muted,
-                    letterSpacing = 0.6.sp,
+                    color = CalSnapColors.Mute2,
+                    modifier = Modifier.padding(bottom = 1.dp),
                 )
             }
-            Text(
-                text = "${(pct * 100).toInt()}%",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.W600,
-                color = CalSnapColors.Mute2,
-            )
         }
-
-        Spacer(Modifier.height(6.dp))
-        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(
-                text = value.toString(),
-                fontSize = 32.sp,
-                fontWeight = FontWeight.W700,
-                color = CalSnapColors.Ink,
-                letterSpacing = (-1).sp,
-                lineHeight = 32.sp,
-            )
-            Text(
-                text = suffix,
-                fontSize = 14.sp,
-                color = CalSnapColors.Muted,
-                fontWeight = FontWeight.W500,
-                modifier = Modifier.padding(bottom = 3.dp),
-            )
-        }
-
         Spacer(Modifier.height(10.dp))
-
-        // Slider track
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(4.dp)
                 .clip(RoundedCornerShape(2.dp))
-                .background(Color(0xFF0E0E0E).copy(alpha = 0.06f)),
+                .background(CalSnapColors.SurfaceAlt),
         ) {
             Box(
                 modifier = Modifier
@@ -820,34 +729,10 @@ private fun MacroInput(
                     .background(accent),
             )
         }
-
-        Spacer(Modifier.height(4.dp))
-
-        // Thumb indicator
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(pct)
-                    .wrapContentWidth(Alignment.End),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .shadow(
-                            elevation = 2.dp,
-                            shape = CircleShape,
-                            ambientColor = Color(0x18000000),
-                        )
-                        .clip(CircleShape)
-                        .background(Color.White)
-                        .border(width = 2.dp, color = accent, shape = CircleShape),
-                )
-            }
-        }
     }
 }
 
-// ── Keypad bottom sheet ───────────────────────────────────────────────────────
+// ── Keypad bottom sheet (flat iOS-style) ──────────────────────────────────────
 
 @Composable
 private fun KeypadSheet(
@@ -863,10 +748,7 @@ private fun KeypadSheet(
         EditingField.CARBS    -> "Carbohydrates"
         EditingField.FAT      -> "Fat"
     }
-    val suffix = when (field) {
-        EditingField.CALORIES -> "kcal"
-        else -> "g"
-    }
+    val suffix = if (field == EditingField.CALORIES) "kcal" else "g"
     val isCalories = field == EditingField.CALORIES
 
     Column(
@@ -875,14 +757,21 @@ private fun KeypadSheet(
             .navigationBarsPadding()
             .padding(bottom = 8.dp),
     ) {
-        // Value display card
+        // Value display card (cream surface)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
+                .shadow(
+                    elevation = 4.dp,
+                    shape = RoundedCornerShape(24.dp),
+                    ambientColor = CardShadowAmbient,
+                    spotColor = CardShadowSpot,
+                )
                 .clip(RoundedCornerShape(24.dp))
-                .background(if (isIosPlatform) CalSnapColors.SurfaceAlt else Color(0xFFF7F4EE))
-                .padding(vertical = 22.dp, horizontal = 22.dp),
+                .background(Color.White)
+                .border(1.dp, CalSnapColors.Border, RoundedCornerShape(24.dp))
+                .padding(vertical = 24.dp, horizontal = 22.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
@@ -890,19 +779,10 @@ private fun KeypadSheet(
                 fontSize = 11.sp,
                 fontWeight = FontWeight.W700,
                 color = CalSnapColors.Muted,
-                letterSpacing = 0.7.sp,
+                letterSpacing = 0.8.sp,
             )
             Spacer(Modifier.height(6.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                // Blinking cursor before value
-                val infiniteTransition = rememberInfiniteTransition()
-                val cursorAlpha by infiniteTransition.animateFloat(
-                    initialValue = 1f, targetValue = 0f,
-                    animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
-                )
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.Center) {
                 Text(
                     text = if (buffer.isEmpty()) "0" else buffer,
                     fontSize = 64.sp,
@@ -911,9 +791,14 @@ private fun KeypadSheet(
                     letterSpacing = (-2.5).sp,
                     lineHeight = 64.sp,
                 )
+                val infiniteTransition = rememberInfiniteTransition()
+                val cursorAlpha by infiniteTransition.animateFloat(
+                    initialValue = 1f, targetValue = 0f,
+                    animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
+                )
                 Box(
                     modifier = Modifier
-                        .padding(start = 2.dp)
+                        .padding(start = 2.dp, bottom = 6.dp)
                         .width(2.dp)
                         .height(48.dp)
                         .background(CalSnapColors.Red.copy(alpha = cursorAlpha)),
@@ -923,51 +808,71 @@ private fun KeypadSheet(
                     text = suffix,
                     fontSize = 16.sp,
                     color = CalSnapColors.Muted,
-                    modifier = Modifier.padding(top = 16.dp),
+                    modifier = Modifier.padding(bottom = 10.dp),
                 )
             }
-            Spacer(Modifier.height(10.dp))
-            // Quick adjust pills
             if (isCalories) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = "TDEE base · tap −/+ to adjust by 50",
+                    fontSize = 12.sp,
+                    color = CalSnapColors.Muted,
+                )
+                Spacer(Modifier.height(14.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(-50 to "−50", 50 to "+50", 200 to "+200").forEach { (delta, label) ->
-                        GlassPill(text = label, onClick = { onQuickAdjust(delta) })
+                    listOf(-50 to "− 50", 50 to "+ 50", 200 to "+ 200").forEach { (delta, label) ->
+                        Box(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(CalSnapColors.SurfaceAlt)
+                                .border(1.dp, CalSnapColors.Border, CircleShape)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = { onQuickAdjust(delta) },
+                                )
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
+                        ) {
+                            Text(label, fontSize = 13.sp, fontWeight = FontWeight.W600, color = CalSnapColors.Ink)
+                        }
                     }
                 }
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // Keypad grid
+        // Done button
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(CalSnapColors.Red)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onDone,
+                    )
+                    .padding(horizontal = 18.dp, vertical = 8.dp),
+            ) {
+                Text("Done", fontSize = 13.sp, fontWeight = FontWeight.W700, color = Color.White)
+            }
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        // Keypad — flat iOS-style on cream background
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(if (isIosPlatform) Color.White.copy(alpha = 0.62f) else Color.White)
-                .padding(horizontal = 8.dp, vertical = 8.dp),
+                .background(Color.White)
+                .border(width = 0.dp, color = CalSnapColors.Divider)
+                .padding(horizontal = 8.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            // Done button row at top
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(CalSnapColors.Ink)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = onDone,
-                        )
-                        .padding(horizontal = 18.dp, vertical = 8.dp),
-                ) {
-                    Text("Done", fontSize = 14.sp, fontWeight = FontWeight.W700, color = Color.White)
-                }
-            }
-            Spacer(Modifier.height(4.dp))
-
             val keys = listOf(
                 listOf("1", "2", "3"),
                 listOf("4", "5", "6"),
@@ -980,11 +885,7 @@ private fun KeypadSheet(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     row.forEach { key ->
-                        KeypadButton(
-                            key = key,
-                            modifier = Modifier.weight(1f),
-                            onClick = { onKey(key) },
-                        )
+                        KeypadButton(key = key, modifier = Modifier.weight(1f), onClick = { onKey(key) })
                     }
                 }
             }
@@ -996,14 +897,10 @@ private fun KeypadSheet(
 private fun KeypadButton(key: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
         modifier = modifier
-            .height(50.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (isIosPlatform) Color.White.copy(alpha = 0.7f) else CalSnapColors.SurfaceAlt)
-            .border(
-                width = 1.dp,
-                color = if (isIosPlatform) Color.White.copy(alpha = 0.9f) else Color.Transparent,
-                shape = RoundedCornerShape(14.dp),
-            )
+            .height(52.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(CalSnapColors.SurfaceAlt)
+            .border(width = 1.dp, color = CalSnapColors.Border, shape = RoundedCornerShape(12.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -1016,64 +913,8 @@ private fun KeypadButton(key: String, modifier: Modifier = Modifier, onClick: ()
             fontSize = 22.sp,
             fontWeight = FontWeight.W500,
             color = CalSnapColors.Ink,
-            textAlign = TextAlign.Center,
         )
     }
-}
-
-// ── Glass pill (small chip) ───────────────────────────────────────────────────
-
-@Composable
-private fun GlassPill(text: String, onClick: (() -> Unit)? = null) {
-    Box(
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(if (isIosPlatform) Color.White.copy(alpha = 0.55f) else CalSnapColors.SurfaceAlt)
-            .border(
-                width = 1.dp,
-                color = if (isIosPlatform) Color.White.copy(alpha = 0.8f) else Color.Transparent,
-                shape = CircleShape,
-            )
-            .then(
-                if (onClick != null) Modifier.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onClick,
-                ) else Modifier
-            )
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-    ) {
-        Text(
-            text = text,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.W600,
-            color = CalSnapColors.Ink,
-        )
-    }
-}
-
-// ── Glass card surface ────────────────────────────────────────────────────────
-
-@Composable
-private fun GlassCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        modifier = modifier
-            .shadow(
-                elevation = if (isIosPlatform) 0.dp else 8.dp,
-                shape = RoundedCornerShape(24.dp),
-                ambientColor = Color(0x0A140F08),
-                spotColor = Color(0x10140F08),
-            )
-            .clip(RoundedCornerShape(24.dp))
-            .background(if (isIosPlatform) Color.White.copy(alpha = 0.78f) else Color.White)
-            .border(
-                width = 1.dp,
-                color = if (isIosPlatform) Color.White.copy(alpha = 0.9f) else Color.Transparent,
-                shape = RoundedCornerShape(24.dp),
-            )
-            .padding(20.dp),
-        content = content,
-    )
 }
 
 // ── Error state ───────────────────────────────────────────────────────────────
