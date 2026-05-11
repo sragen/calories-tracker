@@ -103,11 +103,12 @@ fun EditDailyTargetScreen(
                     onQuickAdjust = viewModel::quickAdjust,
                     onDone = {
                         haptic.light()
-                        // Animate sheet out, then commit state once it's gone.
-                        // Avoids the race where the if-removed ModalBottomSheet
-                        // tears down sheetState mid-hide().
+                        // Animate the sheet out, then commit the value. Swallow any
+                        // hide() failure (e.g. mid-animation state tear-down) so the
+                        // value still commits and we never bubble to the root scope's
+                        // exception handler.
                         scope.launch {
-                            sheetState.hide()
+                            try { sheetState.hide() } catch (_: Throwable) { /* ignored */ }
                             viewModel.confirmKeypad()
                         }
                     },
@@ -755,16 +756,6 @@ private fun KeypadSheet(
     val suffix = if (field == EditingField.CALORIES) "kcal" else "g"
     val isCalories = field == EditingField.CALORIES
 
-    // Hoist the cursor blink out of the layout tree so it doesn't recompose
-    // with every keypadBuffer change.
-    val infiniteTransition = rememberInfiniteTransition(label = "cursor")
-    val cursorAlpha by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(tween(600), RepeatMode.Reverse),
-        label = "cursorAlpha",
-    )
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -804,7 +795,7 @@ private fun KeypadSheet(
                         .padding(start = 2.dp, bottom = 8.dp)
                         .width(2.dp)
                         .height(40.dp)
-                        .background(CalSnapColors.Red.copy(alpha = cursorAlpha)),
+                        .background(CalSnapColors.Red),
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
