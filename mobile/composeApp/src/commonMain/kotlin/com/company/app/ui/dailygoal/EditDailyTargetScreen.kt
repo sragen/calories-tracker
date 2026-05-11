@@ -62,11 +62,6 @@ fun EditDailyTargetScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val showSheet = state.editingField != null
 
-    LaunchedEffect(showSheet) {
-        if (showSheet) scope.launch { sheetState.show() }
-        else scope.launch { sheetState.hide() }
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -106,7 +101,16 @@ fun EditDailyTargetScreen(
                     buffer = state.keypadBuffer,
                     onKey = viewModel::onKeypadInput,
                     onQuickAdjust = viewModel::quickAdjust,
-                    onDone = { viewModel.confirmKeypad(); haptic.light() },
+                    onDone = {
+                        haptic.light()
+                        // Animate sheet out, then commit state once it's gone.
+                        // Avoids the race where the if-removed ModalBottomSheet
+                        // tears down sheetState mid-hide().
+                        scope.launch {
+                            sheetState.hide()
+                            viewModel.confirmKeypad()
+                        }
+                    },
                 )
             }
         }
