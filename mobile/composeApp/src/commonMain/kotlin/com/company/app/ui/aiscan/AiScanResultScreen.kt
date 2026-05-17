@@ -93,6 +93,7 @@ fun AiScanResultScreen(
                 onBack = onBack,
                 onReSnap = onReSnap,
                 onItemTap = { refineFood = it },
+                onItemToggle = { viewModel.toggleFood(it) },
                 onLog = { viewModel.confirm(selectedMealType, today) },
                 onRegister = onRegisterFromGuest,
             )
@@ -394,6 +395,7 @@ private fun ResultContent(
     onBack: () -> Unit,
     onReSnap: () -> Unit,
     onItemTap: (AiDetectedFood) -> Unit,
+    onItemToggle: (AiDetectedFood) -> Unit,
     onLog: () -> Unit,
     onRegister: () -> Unit,
 ) {
@@ -435,7 +437,15 @@ private fun ResultContent(
                 val current = selectedFoods.firstOrNull {
                     it.name == food.name && it.matchedFoodId == food.matchedFoodId
                 } ?: food
-                DetectedItemRow(food = current, onTap = { onItemTap(food) })
+                val isSelected = selectedFoods.any {
+                    it.name == food.name && it.matchedFoodId == food.matchedFoodId
+                }
+                DetectedItemRow(
+                    food = current,
+                    isSelected = isSelected,
+                    onTap = { onItemTap(food) },
+                    onToggle = { onItemToggle(food) },
+                )
             }
             item {
                 Spacer(Modifier.height(18.dp))
@@ -758,8 +768,15 @@ private fun DetectedItemsHeader() {
 }
 
 @Composable
-private fun DetectedItemRow(food: AiDetectedFood, onTap: () -> Unit) {
+private fun DetectedItemRow(
+    food: AiDetectedFood,
+    isSelected: Boolean,
+    onTap: () -> Unit,
+    onToggle: () -> Unit,
+) {
     val kcal = food.effectiveCalories()
+    val nameColor = if (isSelected) CalSnapColors.Ink else CalSnapColors.Mute2
+    val checkBg = if (isSelected) CalSnapColors.ProteinBg else CalSnapColors.SurfaceAlt
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -776,17 +793,24 @@ private fun DetectedItemRow(food: AiDetectedFood, onTap: () -> Unit) {
             modifier = Modifier
                 .size(24.dp)
                 .clip(RoundedCornerShape(6.dp))
-                .background(CalSnapColors.ProteinBg),
+                .background(checkBg)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onToggle,
+                ),
             contentAlignment = Alignment.Center,
         ) {
-            CalSnapIcon(name = "check", size = 12.dp, color = CalSnapColors.Red, strokeWidth = 3f)
+            if (isSelected) {
+                CalSnapIcon(name = "check", size = 12.dp, color = CalSnapColors.Red, strokeWidth = 3f)
+            }
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = food.name,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.W600,
-                color = CalSnapColors.Ink,
+                color = nameColor,
                 letterSpacing = (-0.2).sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -802,7 +826,7 @@ private fun DetectedItemRow(food: AiDetectedFood, onTap: () -> Unit) {
             text = "${kcal.roundToInt()} kcal",
             fontSize = 13.sp,
             fontWeight = FontWeight.W600,
-            color = CalSnapColors.Ink,
+            color = nameColor,
         )
         CalSnapIcon(name = "chev-r", size = 14.dp, color = CalSnapColors.Mute2)
     }

@@ -60,9 +60,20 @@ class AiScanViewModel(
     }
 
     fun toggleFood(food: AiDetectedFood) {
-        val current = state.selectedFoods.toMutableList()
-        if (current.contains(food)) current.remove(food) else current.add(food)
-        state = state.copy(selectedFoods = current)
+        // Match by (name, matchedFoodId) — selectedFoods may hold a copy with a
+        // different portionG after updatePortion(), so structural equality fails.
+        val isSelected = state.selectedFoods.any {
+            it.name == food.name && it.matchedFoodId == food.matchedFoodId
+        }
+        state = state.copy(
+            selectedFoods = if (isSelected) {
+                state.selectedFoods.filterNot {
+                    it.name == food.name && it.matchedFoodId == food.matchedFoodId
+                }
+            } else {
+                state.selectedFoods + food
+            }
+        )
     }
 
     fun updatePortion(food: AiDetectedFood, portionG: Double) {
