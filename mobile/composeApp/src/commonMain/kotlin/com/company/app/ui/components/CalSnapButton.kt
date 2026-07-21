@@ -14,7 +14,7 @@ import com.company.app.ui.theme.CalSnapRadius
 import com.company.app.ui.theme.CalSnapType
 
 /**
- * Primary button — Ink background, white text, pill shape.
+ * Primary button — accent fill, dark label, pill shape.
  * Full-width by default.
  */
 @Composable
@@ -29,8 +29,8 @@ fun CalSnapPrimaryButton(
         enabled = enabled,
         shape = RoundedCornerShape(CalSnapRadius.pill),
         colors = ButtonDefaults.buttonColors(
-            containerColor = CalSnapColors.Ink,
-            contentColor = CalSnapColors.Background,
+            containerColor = CalSnapColors.Accent,
+            contentColor = CalSnapColors.OnAccent,
             disabledContainerColor = CalSnapColors.Hint,
             disabledContentColor = CalSnapColors.Mute2,
         ),
@@ -44,7 +44,7 @@ fun CalSnapPrimaryButton(
 }
 
 /**
- * Brand button — Red background, white text, pill shape, red glow shadow.
+ * Brand button — accent fill with a volt glow. Highest-emphasis CTA.
  * Used for high-emphasis CTAs (Plan Reveal, Paywall).
  */
 @Composable
@@ -59,8 +59,8 @@ fun CalSnapBrandButton(
         enabled = enabled,
         shape = RoundedCornerShape(CalSnapRadius.pill),
         colors = ButtonDefaults.buttonColors(
-            containerColor = CalSnapColors.Red,
-            contentColor = CalSnapColors.Background,
+            containerColor = CalSnapColors.Accent,
+            contentColor = CalSnapColors.OnAccent,
             disabledContainerColor = CalSnapColors.Hint,
             disabledContentColor = CalSnapColors.Mute2,
         ),

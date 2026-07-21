@@ -398,7 +398,21 @@ data class AiDetectedFood(
     val carbsPer100g: Double,
     val fatPer100g: Double,
     val matchedFoodId: Long? = null,
-    val totalCalories: Double = 0.0
+    val totalCalories: Double = 0.0,
+    val swapped: Boolean = false
+)
+
+/** Build an [AiDetectedFood] from a catalog [FoodItem], carrying over the current portion. */
+fun FoodItem.toDetected(portionG: Double): AiDetectedFood = AiDetectedFood(
+    name = name,
+    portionG = portionG,
+    caloriesPer100g = caloriesPer100g,
+    proteinPer100g = proteinPer100g,
+    carbsPer100g = carbsPer100g,
+    fatPer100g = fatPer100g,
+    matchedFoodId = id,
+    totalCalories = caloriesPer100g * portionG / 100.0,
+    swapped = true
 )
 
 @Serializable

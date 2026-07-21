@@ -77,7 +77,7 @@ val iosAppModule = module {
     factory { SearchFoodViewModel(get(), get()) }
     factory { SubmitFoodViewModel(get()) }
     factory { ProfileViewModel(get(), get(), get(), get(), get()) }
-    factory { AiScanViewModel(get(), get()) }
+    factory { AiScanViewModel(get(), get(), get()) }
     factory { SubscriptionViewModel(get<BillingRepository>(), get()) }
     factory { AnalyticsViewModel(get(), get(), get()) }
     factory { EditDailyTargetViewModel(get()) }

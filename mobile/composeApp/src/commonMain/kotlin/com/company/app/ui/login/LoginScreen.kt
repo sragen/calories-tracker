@@ -105,17 +105,17 @@ fun LoginScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(CalSnapRadius.md))
-                        .background(CalSnapColors.RedSoft)
+                        .background(CalSnapColors.BadSoft)
                         .padding(CalSnapSpacing.md),
                 ) {
-                    Text(it, style = CalSnapType.BodySmall, color = CalSnapColors.Red)
+                    Text(it, style = CalSnapType.BodySmall, color = CalSnapColors.Bad)
                 }
             }
 
             Spacer(Modifier.height(CalSnapSpacing.sm))
 
             if (state.isLoading) {
-                CircularProgressIndicator(color = CalSnapColors.Red, modifier = Modifier.size(28.dp))
+                CircularProgressIndicator(color = CalSnapColors.Accent, modifier = Modifier.size(28.dp))
             } else {
                 CalSnapPrimaryButton(
                     text = "Sign In",
@@ -215,7 +215,7 @@ private fun GoogleGlyph() {
     ) {
         Text(
             text = "G",
-            color = Color(0xFF4285F4),
+            color = CalSnapColors.GoogleBlue,
             fontSize = 18.sp,
             fontWeight = FontWeight.W900,
         )

@@ -138,17 +138,17 @@ fun RegisterScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(CalSnapRadius.md))
-                            .background(CalSnapColors.RedSoft)
+                            .background(CalSnapColors.BadSoft)
                             .padding(CalSnapSpacing.md),
                     ) {
-                        Text(it, style = CalSnapType.BodySmall, color = CalSnapColors.Red)
+                        Text(it, style = CalSnapType.BodySmall, color = CalSnapColors.Bad)
                     }
                 }
 
                 Spacer(Modifier.height(CalSnapSpacing.sm))
 
                 if (state.isLoading) {
-                    CircularProgressIndicator(color = CalSnapColors.Red, modifier = Modifier.size(28.dp))
+                    CircularProgressIndicator(color = CalSnapColors.Accent, modifier = Modifier.size(28.dp))
                 } else {
                     CalSnapPrimaryButton(
                         text = "Create Account",

@@ -1,5 +1,12 @@
 package com.company.app.ui.onboarding
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,18 +55,18 @@ fun OnboardingPlanRevealScreen(
         Row(
             modifier = Modifier
                 .clip(RoundedCornerShape(CalSnapRadius.pill))
-                .background(CalSnapColors.Ink)
+                .background(CalSnapColors.Accent)
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            CalSnapIcon(name = "sparkle", size = 12.dp, color = Color.White, strokeWidth = 2.4f)
+            CalSnapIcon(name = "sparkle", size = 12.dp, color = CalSnapColors.OnAccent, strokeWidth = 2.4f)
             Text(
                 text = "YOUR PLAN",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.4.sp,
-                color = Color.White,
+                color = CalSnapColors.OnAccent,
             )
         }
 
@@ -68,7 +75,7 @@ fun OnboardingPlanRevealScreen(
         Text(
             text = buildAnnotatedString {
                 append("Hit this every day\nand you'll reach ")
-                withStyle(SpanStyle(color = CalSnapColors.Red)) {
+                withStyle(SpanStyle(color = CalSnapColors.Accent)) {
                     append("your goal.")
                 }
             },
@@ -85,7 +92,7 @@ fun OnboardingPlanRevealScreen(
             isLoading || preview == null -> {
                 Spacer(Modifier.weight(1f))
                 CircularProgressIndicator(
-                    color = CalSnapColors.Red,
+                    color = CalSnapColors.Accent,
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                 )
                 Spacer(Modifier.weight(1f))
@@ -137,8 +144,7 @@ private fun PlanCard(preview: BmrPreviewResponse) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(26.dp))
-            .background(Color.White)
+            .calSnapAccentLift(radius = 26.dp)
             .padding(horizontal = 24.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -152,10 +158,16 @@ private fun PlanCard(preview: BmrPreviewResponse) {
 
         Spacer(Modifier.height(6.dp))
 
+        // A3 — the reveal moment: the target number pops in from 0.86.
+        val pop = remember { Animatable(0.86f) }
+        LaunchedEffect(Unit) {
+            pop.animateTo(1f, tween(CalSnapMotion.RevealMs, easing = EaseOutReveal))
+        }
         Text(
             text = preview.recommendedCalories.toInt().toString(),
-            style = CalSnapType.Display,
+            style = CalSnapType.Display.copy(fontFamily = numeralFont),
             color = CalSnapColors.Ink,
+            modifier = Modifier.scale(pop.value),
         )
 
         Text(
@@ -174,6 +186,7 @@ private fun PlanCard(preview: BmrPreviewResponse) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             MacroTile(
                 label = "Protein",
+                index = 0,
                 value = preview.recommendedProteinG.toInt().toString(),
                 unit = "g",
                 tint = CalSnapColors.Protein,
@@ -182,6 +195,7 @@ private fun PlanCard(preview: BmrPreviewResponse) {
             )
             MacroTile(
                 label = "Carbs",
+                index = 1,
                 value = preview.recommendedCarbsG.toInt().toString(),
                 unit = "g",
                 tint = CalSnapColors.Carb,
@@ -190,6 +204,7 @@ private fun PlanCard(preview: BmrPreviewResponse) {
             )
             MacroTile(
                 label = "Fat",
+                index = 2,
                 value = preview.recommendedFatG.toInt().toString(),
                 unit = "g",
                 tint = CalSnapColors.Fat,
@@ -207,10 +222,19 @@ private fun MacroTile(
     unit: String,
     tint: Color,
     bg: Color,
+    index: Int = 0,
     modifier: Modifier = Modifier,
 ) {
+    // A3 — tiles arrive one after another, protein → carbs → fat.
+    val entry = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        delay(index.toLong() * CalSnapMotion.RevealStaggerMs)
+        entry.animateTo(1f, tween(CalSnapMotion.RevealMs, easing = EaseOutReveal))
+    }
     Column(
         modifier = modifier
+            .offset(y = ((1f - entry.value) * 10).dp)
+            .alpha(entry.value)
             .clip(RoundedCornerShape(14.dp))
             .background(bg)
             .padding(horizontal = 8.dp, vertical = 12.dp),

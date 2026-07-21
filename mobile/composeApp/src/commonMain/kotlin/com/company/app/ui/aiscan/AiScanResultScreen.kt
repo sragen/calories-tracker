@@ -1,6 +1,7 @@
 package com.company.app.ui.aiscan
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -44,6 +45,7 @@ import com.company.app.shared.data.model.AiDetectedFood
 import com.company.app.shared.data.model.DailyGoalResponse
 import com.company.app.ui.components.*
 import com.company.app.ui.platform.decodeImageBitmap
+import com.company.app.ui.platform.rememberHapticFeedback
 import com.company.app.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -68,12 +70,20 @@ fun AiScanResultScreen(
     val state = viewModel.state
     val today = Clock.System.todayIn(TimeZone.currentSystemDefault()).toString()
     var selectedMealType by remember(mealType) { mutableStateOf(mealType.uppercase()) }
-    var refineFood by remember { mutableStateOf<AiDetectedFood?>(null) }
 
     LaunchedEffect(state.confirmed) { if (state.confirmed) onConfirmed() }
 
     val photo: ImageBitmap? = remember(state.imageBytes) {
         state.imageBytes?.decodeImageBitmap()
+    }
+
+    // Haptic: success when the result lands, error when the scan fails.
+    val haptic = rememberHapticFeedback()
+    LaunchedEffect(state.isAnalyzing, state.scanResult) {
+        if (!state.isAnalyzing && state.scanResult != null) haptic.success()
+    }
+    LaunchedEffect(state.error) {
+        if (state.error != null && state.scanResult == null) haptic.error()
     }
 
     when {
@@ -82,8 +92,7 @@ fun AiScanResultScreen(
         else -> {
             ResultContent(
                 photo = photo,
-                detected = state.scanResult.detectedFoods,
-                selectedFoods = state.selectedFoods,
+                items = state.items,
                 goal = state.goal,
                 selectedMealType = selectedMealType,
                 onMealTypeChange = { selectedMealType = it },
@@ -92,7 +101,7 @@ fun AiScanResultScreen(
                 error = state.error,
                 onBack = onBack,
                 onReSnap = onReSnap,
-                onItemTap = { refineFood = it },
+                onItemTap = { viewModel.openCorrection(it) },
                 onItemToggle = { viewModel.toggleFood(it) },
                 onLog = { viewModel.confirm(selectedMealType, today) },
                 onRegister = onRegisterFromGuest,
@@ -102,23 +111,32 @@ fun AiScanResultScreen(
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val sheetScope = rememberCoroutineScope()
-    val activeFood = refineFood
-    if (activeFood != null) {
+    val target = state.correctionTarget
+    if (target != null) {
         ModalBottomSheet(
-            onDismissRequest = { refineFood = null },
+            onDismissRequest = { viewModel.closeCorrection() },
             sheetState = sheetState,
             containerColor = CalSnapColors.Background,
         ) {
-            val current = state.selectedFoods.firstOrNull {
-                it.name == activeFood.name && it.matchedFoodId == activeFood.matchedFoodId
-            } ?: activeFood
-            RefinePortionSheet(
-                food = current,
-                onPortionChange = { viewModel.updatePortion(activeFood, it) },
+            AiCorrectionSheet(
+                food = target.food,
+                mode = state.correctionMode,
+                onModeChange = { viewModel.setCorrectionMode(it) },
+                onPortionChange = { viewModel.updatePortion(target.id, it) },
+                swapQuery = state.swapQuery,
+                swapResults = state.swapResults,
+                isSearchingSwap = state.isSearchingSwap,
+                onSwapQueryChange = { viewModel.onSwapQueryChange(it) },
+                onSelectSwap = { replacement ->
+                    sheetScope.launch {
+                        runCatching { sheetState.hide() }
+                        viewModel.swapFood(target.id, replacement)
+                    }
+                },
                 onDone = {
                     sheetScope.launch {
                         runCatching { sheetState.hide() }
-                        refineFood = null
+                        viewModel.closeCorrection()
                     }
                 },
             )
@@ -133,7 +151,7 @@ private fun AnalyzingScreen(photo: ImageBitmap?) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0A0A0A)),
+            .background(CalSnapColors.CameraBg),
     ) {
         // Captured photo
         if (photo != null) {
@@ -148,7 +166,7 @@ private fun AnalyzingScreen(photo: ImageBitmap?) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.25f)),
+                .background(CalSnapColors.Scrim.copy(alpha = 0.25f)),
         )
 
         AnalyzingScanLine()
@@ -166,8 +184,8 @@ private fun AnalyzingScanLine() {
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1800, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
+            animation = tween(1600, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse,
         ),
         label = "scanLineY",
     )
@@ -175,16 +193,38 @@ private fun AnalyzingScanLine() {
         val h = maxHeight
         Box(
             modifier = Modifier
-                .padding(horizontal = 40.dp)
                 .fillMaxWidth()
-                .height(2.dp)
-                .offset(y = h * progress)
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(Color.Transparent, CalSnapColors.Red, Color.Transparent),
+                .offset(y = h * progress - 8.dp)
+                .padding(horizontal = 40.dp)
+                .height(16.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            // Red glow band behind the line
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Transparent,
+                                CalSnapColors.Accent.copy(alpha = 0.35f),
+                                Color.Transparent,
+                            ),
+                        ),
                     ),
-                ),
-        )
+            )
+            // The 2dp scan line
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(Color.Transparent, CalSnapColors.Accent, Color.Transparent),
+                        ),
+                    ),
+            )
+        }
     }
 }
 
@@ -220,7 +260,7 @@ private fun AnalyzingDetectionMarkers() {
                         .offset(x = w * lf, y = h * tf)
                         .alpha(pulse)
                         .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.7f))
+                        .background(CalSnapColors.Scrim.copy(alpha = 0.7f))
                         .padding(horizontal = 10.dp, vertical = 4.dp),
                 ) {
                     Row(
@@ -231,11 +271,11 @@ private fun AnalyzingDetectionMarkers() {
                             modifier = Modifier
                                 .size(6.dp)
                                 .clip(CircleShape)
-                                .background(CalSnapColors.Red),
+                                .background(CalSnapColors.Accent),
                         )
                         Text(
                             text = "Detecting…",
-                            color = Color.White,
+                            color = CalSnapColors.OnDark,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.W600,
                         )
@@ -296,7 +336,7 @@ private fun AnalyzingBottomPanel(modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-            .background(Color(0xFF14100A).copy(alpha = 0.92f))
+            .background(CalSnapColors.AnalyzingPanel.copy(alpha = 0.92f))
             .padding(horizontal = 28.dp)
             .padding(top = 32.dp, bottom = 60.dp),
     ) {
@@ -310,22 +350,22 @@ private fun AnalyzingBottomPanel(modifier: Modifier = Modifier) {
                     .alpha(pulseAlpha)
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(CalSnapColors.Red),
+                    .background(CalSnapColors.Accent),
                 contentAlignment = Alignment.Center,
             ) {
-                CalSnapIcon(name = "sparkle", size = 20.dp, color = Color.White, strokeWidth = 2.2f)
+                CalSnapIcon(name = "sparkle", size = 20.dp, color = CalSnapColors.OnDark, strokeWidth = 2.2f)
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Analyzing your meal…",
-                    color = Color.White,
+                    color = CalSnapColors.OnDark,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.W700,
                     letterSpacing = (-0.4).sp,
                 )
                 Text(
                     text = "Identifying ingredients",
-                    color = Color.White.copy(alpha = 0.6f),
+                    color = CalSnapColors.OnDark.copy(alpha = 0.6f),
                     fontSize = 13.sp,
                     modifier = Modifier.padding(top = 2.dp),
                 )
@@ -339,13 +379,13 @@ private fun AnalyzingBottomPanel(modifier: Modifier = Modifier) {
                 .fillMaxWidth()
                 .height(4.dp)
                 .clip(RoundedCornerShape(2.dp))
-                .background(Color.White.copy(alpha = 0.1f)),
+                .background(CalSnapColors.OnDark.copy(alpha = 0.1f)),
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(progress)
                     .fillMaxHeight()
-                    .background(CalSnapColors.Red),
+                    .background(CalSnapColors.Accent),
             )
         }
 
@@ -362,16 +402,16 @@ private fun AnalyzingBottomPanel(modifier: Modifier = Modifier) {
                     modifier = Modifier
                         .size(16.dp)
                         .clip(CircleShape)
-                        .background(if (done) CalSnapColors.Good else Color.White.copy(alpha = 0.12f)),
+                        .background(if (done) CalSnapColors.Good else CalSnapColors.OnDark.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (done) {
-                        CalSnapIcon(name = "check", size = 10.dp, color = Color.White, strokeWidth = 3f)
+                        CalSnapIcon(name = "check", size = 10.dp, color = CalSnapColors.OnDark, strokeWidth = 3f)
                     }
                 }
                 Text(
                     text = label,
-                    color = if (done) Color.White else Color.White.copy(alpha = 0.5f),
+                    color = if (done) CalSnapColors.OnDark else CalSnapColors.OnDark.copy(alpha = 0.5f),
                     fontSize = 13.sp,
                 )
             }
@@ -384,8 +424,7 @@ private fun AnalyzingBottomPanel(modifier: Modifier = Modifier) {
 @Composable
 private fun ResultContent(
     photo: ImageBitmap?,
-    detected: List<AiDetectedFood>,
-    selectedFoods: List<AiDetectedFood>,
+    items: List<ScanItem>,
     goal: DailyGoalResponse?,
     selectedMealType: String,
     onMealTypeChange: (String) -> Unit,
@@ -394,18 +433,19 @@ private fun ResultContent(
     error: String?,
     onBack: () -> Unit,
     onReSnap: () -> Unit,
-    onItemTap: (AiDetectedFood) -> Unit,
-    onItemToggle: (AiDetectedFood) -> Unit,
+    onItemTap: (Int) -> Unit,
+    onItemToggle: (Int) -> Unit,
     onLog: () -> Unit,
     onRegister: () -> Unit,
 ) {
+    val selectedFoods = items.filter { it.selected }.map { it.food }
     val totalKcal = selectedFoods.sumOf { it.effectiveCalories() }
     val totalProtein = selectedFoods.sumOf { it.proteinPer100g * it.portionG / 100.0 }
     val totalCarbs = selectedFoods.sumOf { it.carbsPer100g * it.portionG / 100.0 }
     val totalFat = selectedFoods.sumOf { it.fatPer100g * it.portionG / 100.0 }
     val totalGrams = selectedFoods.sumOf { it.portionG }.roundToInt()
-    val title = detected.firstOrNull()?.name?.replaceFirstChar { it.uppercase() } ?: "Your meal"
-    val itemsLabel = "${detected.size} item${if (detected.size != 1) "s" else ""} · ≈ ${totalGrams}g"
+    val title = items.firstOrNull()?.food?.name?.replaceFirstChar { it.uppercase() } ?: "Your meal"
+    val itemsLabel = "${items.size} item${if (items.size != 1) "s" else ""} · ≈ ${totalGrams}g"
 
     Box(
         modifier = Modifier
@@ -433,18 +473,12 @@ private fun ResultContent(
                 Spacer(Modifier.height(22.dp))
                 DetectedItemsHeader()
             }
-            items(detected, key = { "${it.name}_${it.matchedFoodId}" }) { food ->
-                val current = selectedFoods.firstOrNull {
-                    it.name == food.name && it.matchedFoodId == food.matchedFoodId
-                } ?: food
-                val isSelected = selectedFoods.any {
-                    it.name == food.name && it.matchedFoodId == food.matchedFoodId
-                }
+            items(items, key = { it.id }) { item ->
                 DetectedItemRow(
-                    food = current,
-                    isSelected = isSelected,
-                    onTap = { onItemTap(food) },
-                    onToggle = { onItemToggle(food) },
+                    food = item.food,
+                    isSelected = item.selected,
+                    onTap = { onItemTap(item.id) },
+                    onToggle = { onItemToggle(item.id) },
                 )
             }
             item {
@@ -462,12 +496,12 @@ private fun ResultContent(
                             .fillMaxWidth()
                             .padding(horizontal = 22.dp, vertical = 12.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(CalSnapColors.RedSoft)
+                            .background(CalSnapColors.BadSoft)
                             .padding(12.dp),
                     ) {
                         Text(
                             text = it,
-                            color = CalSnapColors.Red,
+                            color = CalSnapColors.Bad,
                             fontSize = 13.sp,
                         )
                     }
@@ -509,7 +543,7 @@ private fun ResultPhotoHeader(photo: ImageBitmap?, onBack: () -> Unit) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFF2A1808)),
+                    .background(CalSnapColors.PhotoPlaceholder),
             )
         }
         Box(
@@ -519,7 +553,7 @@ private fun ResultPhotoHeader(photo: ImageBitmap?, onBack: () -> Unit) {
                     Brush.verticalGradient(
                         colorStops = arrayOf(
                             0.6f to Color.Transparent,
-                            1.0f to Color.Black.copy(alpha = 0.25f),
+                            1.0f to CalSnapColors.Scrim.copy(alpha = 0.25f),
                         ),
                     ),
                 ),
@@ -531,7 +565,7 @@ private fun ResultPhotoHeader(photo: ImageBitmap?, onBack: () -> Unit) {
                 .padding(top = 60.dp, start = 20.dp)
                 .size(36.dp)
                 .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.25f))
+                .background(CalSnapColors.OnDark.copy(alpha = 0.25f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -539,7 +573,7 @@ private fun ResultPhotoHeader(photo: ImageBitmap?, onBack: () -> Unit) {
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            CalSnapIcon(name = "chev-l", size = 18.dp, color = Color.White, strokeWidth = 2.2f)
+            CalSnapIcon(name = "chev-l", size = 18.dp, color = CalSnapColors.OnDark, strokeWidth = 2.2f)
         }
 
         // AI confidence pill
@@ -548,15 +582,15 @@ private fun ResultPhotoHeader(photo: ImageBitmap?, onBack: () -> Unit) {
                 .align(Alignment.TopEnd)
                 .padding(top = 60.dp, end = 20.dp)
                 .clip(RoundedCornerShape(999.dp))
-                .background(Color.Black.copy(alpha = 0.4f))
+                .background(CalSnapColors.Scrim.copy(alpha = 0.4f))
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            CalSnapIcon(name = "sparkle", size = 12.dp, color = Color.White, strokeWidth = 2.4f)
+            CalSnapIcon(name = "sparkle", size = 12.dp, color = CalSnapColors.OnDark, strokeWidth = 2.4f)
             Text(
                 text = "AI · 94%",
-                color = Color.White,
+                color = CalSnapColors.OnDark,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.W600,
             )
@@ -575,8 +609,10 @@ private fun ResultSummaryCard(
     totalFat: Double,
 ) {
     val animKcal = remember { Animatable(0f) }
+
     LaunchedEffect(totalKcal) {
-        animKcal.animateTo(totalKcal.toFloat(), tween(700, easing = FastOutSlowInEasing))
+        delay(80) // let the photo settle first (A2)
+        animKcal.animateTo(totalKcal.toFloat(), tween(1100, easing = EaseOutQuart))
     }
 
     Column(
@@ -613,7 +649,8 @@ private fun ResultSummaryCard(
         ) {
             Text(
                 text = animKcal.value.roundToInt().toString(),
-                fontSize = 80.sp,
+                fontSize = 60.sp,
+                fontFamily = numeralFont,
                 fontWeight = FontWeight.W700,
                 color = CalSnapColors.Ink,
                 letterSpacing = (-3.5).sp,
@@ -638,6 +675,7 @@ private fun ResultSummaryCard(
                 target = goal?.targetProteinG ?: 100.0,
                 color = CalSnapColors.Protein,
                 bg = CalSnapColors.ProteinBg,
+                index = 0,
                 modifier = Modifier.weight(1f),
             )
             MacroCard(
@@ -646,6 +684,7 @@ private fun ResultSummaryCard(
                 target = goal?.targetCarbsG ?: 250.0,
                 color = CalSnapColors.Carb,
                 bg = CalSnapColors.CarbBg,
+                index = 1,
                 modifier = Modifier.weight(1f),
             )
             MacroCard(
@@ -654,6 +693,7 @@ private fun ResultSummaryCard(
                 target = goal?.targetFatG ?: 70.0,
                 color = CalSnapColors.Fat,
                 bg = CalSnapColors.FatBg,
+                index = 2,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -669,7 +709,7 @@ private fun GoalPill(totalKcal: Double, goal: DailyGoalResponse?, modifier: Modi
     val arrow = if (under) "↓" else "↑"
     val label = if (under) "${100 - pct}% under goal" else "${pct - 100}% over goal"
     val (fg, bg) = if (under) CalSnapColors.Good to CalSnapColors.GoodBg
-                   else CalSnapColors.Red to CalSnapColors.RedSoft
+                   else CalSnapColors.Accent to CalSnapColors.AccentSoft
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(999.dp))
@@ -700,6 +740,7 @@ private fun MacroCard(
     target: Double,
     color: Color,
     bg: Color,
+    index: Int,
     modifier: Modifier = Modifier,
 ) {
     val pct = (value / target.coerceAtLeast(1.0)).coerceIn(0.0, 1.0).toFloat()
@@ -708,8 +749,16 @@ private fun MacroCard(
         animationSpec = tween(700, easing = FastOutSlowInEasing),
         label = "macroBar",
     )
+    // A2 — staggered fade-in + translateY 8dp→0
+    val entry = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        delay(80L + index * 80L)
+        entry.animateTo(1f, tween(300, easing = FastOutSlowInEasing))
+    }
     Column(
         modifier = modifier
+            .offset(y = ((1f - entry.value) * 8).dp)
+            .alpha(entry.value)
             .clip(RoundedCornerShape(16.dp))
             .background(bg)
             .padding(14.dp),
@@ -743,7 +792,7 @@ private fun MacroCard(
                 .fillMaxWidth()
                 .height(4.dp)
                 .clip(RoundedCornerShape(2.dp))
-                .background(Color.White.copy(alpha = 0.6f)),
+                .background(CalSnapColors.Card.copy(alpha = 0.6f)),
         ) {
             Box(
                 modifier = Modifier
@@ -758,7 +807,7 @@ private fun MacroCard(
 @Composable
 private fun DetectedItemsHeader() {
     Text(
-        text = "DETECTED ITEMS · TAP TO REFINE",
+        text = "DETECTED ITEMS · TAP TO REFINE OR SWAP",
         fontSize = 12.sp,
         color = CalSnapColors.Muted,
         fontWeight = FontWeight.W600,
@@ -802,7 +851,7 @@ private fun DetectedItemRow(
             contentAlignment = Alignment.Center,
         ) {
             if (isSelected) {
-                CalSnapIcon(name = "check", size = 12.dp, color = CalSnapColors.Red, strokeWidth = 3f)
+                CalSnapIcon(name = "check", size = 12.dp, color = CalSnapColors.Accent, strokeWidth = 3f)
             }
         }
         Column(modifier = Modifier.weight(1f)) {
@@ -816,9 +865,10 @@ private fun DetectedItemRow(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = "${food.portionG.roundToInt()} g",
+                text = if (food.swapped) "${food.portionG.roundToInt()} g · swapped"
+                       else "${food.portionG.roundToInt()} g",
                 fontSize = 12.sp,
-                color = CalSnapColors.Muted,
+                color = if (food.swapped) CalSnapColors.Accent else CalSnapColors.Muted,
                 modifier = Modifier.padding(top = 1.dp),
             )
         }
@@ -862,11 +912,11 @@ private fun MealTypeSegmented(
                         if (isSelected) Modifier.shadow(
                             elevation = 1.dp,
                             shape = RoundedCornerShape(9.dp),
-                            ambientColor = Color.Black.copy(alpha = 0.08f),
-                            spotColor = Color.Black.copy(alpha = 0.08f),
+                            ambientColor = CalSnapColors.Scrim.copy(alpha = 0.08f),
+                            spotColor = CalSnapColors.Scrim.copy(alpha = 0.08f),
                         ) else Modifier
                     )
-                    .background(if (isSelected) CalSnapColors.Background else Color.Transparent)
+                    .background(if (isSelected) CalSnapColors.Card else Color.Transparent)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -945,11 +995,11 @@ private fun ResultCtaBar(
                         .shadow(
                             elevation = 8.dp,
                             shape = RoundedCornerShape(28.dp),
-                            ambientColor = CalSnapColors.Red.copy(alpha = 0.4f),
-                            spotColor = CalSnapColors.Red.copy(alpha = 0.4f),
+                            ambientColor = CalSnapColors.Accent.copy(alpha = 0.4f),
+                            spotColor = CalSnapColors.Accent.copy(alpha = 0.4f),
                         )
                         .clip(RoundedCornerShape(28.dp))
-                        .background(if (enabled) CalSnapColors.Red else CalSnapColors.Red.copy(alpha = 0.5f))
+                        .background(if (enabled) CalSnapColors.Accent else CalSnapColors.Accent.copy(alpha = 0.5f))
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -966,14 +1016,14 @@ private fun ResultCtaBar(
                             CircularProgressIndicator(
                                 modifier = Modifier.size(18.dp),
                                 strokeWidth = 2.dp,
-                                color = Color.White,
+                                color = CalSnapColors.OnAccent,
                             )
                         } else {
-                            CalSnapIcon(name = "check", size = 18.dp, color = Color.White, strokeWidth = 2.5f)
+                            CalSnapIcon(name = "check", size = 18.dp, color = CalSnapColors.OnAccent, strokeWidth = 2.5f)
                         }
                         Text(
                             text = label,
-                            color = Color.White,
+                            color = CalSnapColors.OnAccent,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.W700,
                         )
@@ -981,100 +1031,6 @@ private fun ResultCtaBar(
                 }
             }
         }
-    }
-}
-
-// ─── Refine sheet ───────────────────────────────────────────────────────────
-
-@Composable
-private fun RefinePortionSheet(
-    food: AiDetectedFood,
-    onPortionChange: (Double) -> Unit,
-    onDone: () -> Unit,
-) {
-    var portion by remember(food.portionG) { mutableStateOf(food.portionG) }
-    val kcal = food.caloriesPer100g * portion / 100.0
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 22.dp)
-            .padding(bottom = 32.dp),
-    ) {
-        Text(
-            text = food.name,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.W700,
-            color = CalSnapColors.Ink,
-            letterSpacing = (-0.4).sp,
-        )
-        Text(
-            text = "Adjust portion",
-            fontSize = 13.sp,
-            color = CalSnapColors.Muted,
-            modifier = Modifier.padding(top = 4.dp),
-        )
-
-        Spacer(Modifier.height(20.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            StepperButton(label = "−") {
-                portion = (portion - 10.0).coerceAtLeast(10.0)
-                onPortionChange(portion)
-            }
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = "${portion.roundToInt()} g",
-                    fontSize = 36.sp,
-                    fontWeight = FontWeight.W700,
-                    color = CalSnapColors.Ink,
-                    letterSpacing = (-1).sp,
-                )
-                Text(
-                    text = "${kcal.roundToInt()} kcal",
-                    fontSize = 14.sp,
-                    color = CalSnapColors.Muted,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-            }
-            StepperButton(label = "+") {
-                portion += 10.0
-                onPortionChange(portion)
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-        CalSnapBrandButton(text = "Done", onClick = onDone)
-    }
-}
-
-@Composable
-private fun StepperButton(label: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(56.dp)
-            .clip(CircleShape)
-            .background(CalSnapColors.SurfaceAlt)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.W600,
-            color = CalSnapColors.Ink,
-        )
     }
 }
 

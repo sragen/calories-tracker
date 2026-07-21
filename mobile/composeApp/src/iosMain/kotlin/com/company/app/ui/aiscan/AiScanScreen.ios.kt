@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.company.app.ui.theme.CalSnapColors
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
@@ -45,7 +46,7 @@ actual fun AiScanScreen(
     }
 
     // Compose layer is hidden behind the full-screen picker.
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black))
+    Box(modifier = Modifier.fillMaxSize().background(CalSnapColors.CameraBg))
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

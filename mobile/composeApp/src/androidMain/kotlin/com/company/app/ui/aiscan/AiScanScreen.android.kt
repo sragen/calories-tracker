@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -26,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.company.app.ui.platform.rememberHapticFeedback
+import com.company.app.ui.theme.CalSnapColors
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -44,8 +47,10 @@ actual fun AiScanScreen(
     val cameraPermission = rememberPermissionState(android.Manifest.permission.CAMERA)
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
+    val haptic = rememberHapticFeedback()
     var capturing by remember { mutableStateOf(false) }
     var imageCaptureRef by remember { mutableStateOf<ImageCapture?>(null) }
+    val flashAlpha = remember { Animatable(0f) } // A11 — white capture flash
 
     LaunchedEffect(Unit) {
         if (!cameraPermission.status.isGranted) cameraPermission.launchPermissionRequest()
@@ -54,7 +59,7 @@ actual fun AiScanScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(CalSnapColors.CameraBg),
     ) {
         if (cameraPermission.status.isGranted) {
             AndroidView(
@@ -91,6 +96,11 @@ actual fun AiScanScreen(
                 onCapture = {
                     val capture = imageCaptureRef ?: return@ScanOverlay
                     capturing = true
+                    haptic.medium()
+                    scope.launch {
+                        flashAlpha.snapTo(1f)
+                        flashAlpha.animateTo(0f, tween(200, easing = LinearEasing))
+                    }
                     val executor = Executors.newSingleThreadExecutor()
                     capture.takePicture(executor, object : ImageCapture.OnImageCapturedCallback() {
                         override fun onCaptureSuccess(image: ImageProxy) {
@@ -112,6 +122,16 @@ actual fun AiScanScreen(
         } else {
             PermissionDeniedContent(onRequest = { cameraPermission.launchPermissionRequest() })
         }
+
+        // A11 — white shutter flash over everything
+        if (flashAlpha.value > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(flashAlpha.value)
+                    .background(CalSnapColors.OnDark),
+            )
+        }
     }
 }
 
@@ -121,13 +141,13 @@ private fun ScanOverlay(
     onBack: () -> Unit,
     onCapture: () -> Unit,
 ) {
-    // A3 scan line animation — sweeps top→bottom, 2s loop
+    // A3 scan line animation — sweeps top↔bottom, 1600ms pingPong
     val scanLineAnim = rememberInfiniteTransition(label = "scanLine")
     val scanLineY by scanLineAnim.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2000, easing = LinearEasing),
+            animation = tween(durationMillis = 1600, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse,
         ),
         label = "scanLineY",
@@ -139,7 +159,7 @@ private fun ScanOverlay(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.15f)
-                .background(Color.Black.copy(alpha = 0.55f)),
+                .background(CalSnapColors.Scrim.copy(alpha = 0.55f)),
         )
 
         // Bottom scrim
@@ -148,7 +168,7 @@ private fun ScanOverlay(
                 .fillMaxWidth()
                 .fillMaxHeight(0.3f)
                 .align(Alignment.BottomCenter)
-                .background(Color.Black.copy(alpha = 0.55f)),
+                .background(CalSnapColors.Scrim.copy(alpha = 0.55f)),
         )
 
         // Back / close button
@@ -158,7 +178,7 @@ private fun ScanOverlay(
                 .padding(16.dp)
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.4f))
+                .background(CalSnapColors.Scrim.copy(alpha = 0.4f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -166,7 +186,7 @@ private fun ScanOverlay(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Text("✕", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.W600)
+            Text("✕", color = CalSnapColors.OnDark, fontSize = 18.sp, fontWeight = FontWeight.W600)
         }
 
         // Scan frame
@@ -191,9 +211,9 @@ private fun ScanOverlay(
                                 androidx.compose.ui.graphics.Brush.horizontalGradient(
                                     colors = listOf(
                                         Color.Transparent,
-                                        Color(0xFFE63946).copy(alpha = 0.8f),
-                                        Color(0xFFE63946),
-                                        Color(0xFFE63946).copy(alpha = 0.8f),
+                                        CalSnapColors.Accent.copy(alpha = 0.8f),
+                                        CalSnapColors.Accent,
+                                        CalSnapColors.Accent.copy(alpha = 0.8f),
                                         Color.Transparent,
                                     )
                                 )
@@ -212,12 +232,12 @@ private fun ScanOverlay(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(999.dp))
-                    .background(Color.Black.copy(alpha = 0.45f))
+                    .background(CalSnapColors.Scrim.copy(alpha = 0.45f))
                     .padding(horizontal = 16.dp, vertical = 6.dp),
             ) {
                 Text(
                     text = if (capturing) "Analyzing…" else "Point at your food",
-                    color = Color.White,
+                    color = CalSnapColors.OnDark,
                     fontSize = 13.sp,
                     textAlign = TextAlign.Center,
                 )
@@ -234,7 +254,7 @@ private fun ScanOverlay(
         ) {
             if (capturing) {
                 CircularProgressIndicator(
-                    color = Color.White,
+                    color = CalSnapColors.OnDark,
                     modifier = Modifier.size(56.dp),
                     strokeWidth = 3.dp,
                 )
@@ -252,7 +272,7 @@ private fun ShutterButton(onClick: () -> Unit) {
         modifier = Modifier
             .size(80.dp)
             .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.25f))
+            .background(CalSnapColors.OnDark.copy(alpha = 0.25f))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -264,14 +284,14 @@ private fun ShutterButton(onClick: () -> Unit) {
             modifier = Modifier
                 .size(64.dp)
                 .clip(CircleShape)
-                .background(Color.White),
+                .background(CalSnapColors.OnDark),
         )
     }
 }
 
 @Composable
 private fun ScanFrameCorners() {
-    val cornerColor = Color.White
+    val cornerColor = CalSnapColors.OnDark
     val cornerLen = 28.dp
     val strokeW = 3.dp
 
@@ -310,14 +330,14 @@ private fun PermissionDeniedContent(onRequest: () -> Unit) {
             Text("📷", fontSize = 48.sp)
             Text(
                 "Camera access needed to scan food",
-                color = Color.White,
+                color = CalSnapColors.OnDark,
                 textAlign = TextAlign.Center,
                 fontSize = 16.sp,
             )
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(999.dp))
-                    .background(Color.White)
+                    .background(CalSnapColors.OnDark)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -325,7 +345,7 @@ private fun PermissionDeniedContent(onRequest: () -> Unit) {
                     )
                     .padding(horizontal = 24.dp, vertical = 12.dp),
             ) {
-                Text("Allow Camera", color = Color.Black, fontWeight = FontWeight.W600)
+                Text("Allow Camera", color = CalSnapColors.CameraBg, fontWeight = FontWeight.W600)
             }
         }
     }

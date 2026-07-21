@@ -213,7 +213,7 @@ fun SearchFoodScreen(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(CalSnapRadius.pill))
-                            .background(if (isSelected) CalSnapColors.Ink else CalSnapColors.SurfaceAlt)
+                            .background(if (isSelected) CalSnapColors.Accent else CalSnapColors.SurfaceAlt)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
@@ -224,7 +224,7 @@ fun SearchFoodScreen(
                         Text(
                             text = type.lowercase().replaceFirstChar { it.uppercase() },
                             style = CalSnapType.Label,
-                            color = if (isSelected) CalSnapColors.Background else CalSnapColors.Muted,
+                            color = if (isSelected) CalSnapColors.OnAccent else CalSnapColors.Muted,
                         )
                     }
                 }
@@ -254,7 +254,7 @@ fun SearchFoodScreen(
                 if (state.isSearching && state.results.isEmpty()) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center),
-                        color = CalSnapColors.Red,
+                        color = CalSnapColors.Accent,
                     )
                 } else {
                     LazyColumn(state = listState) {
@@ -297,7 +297,7 @@ fun SearchFoodScreen(
                                 ) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(24.dp),
-                                        color = CalSnapColors.Red,
+                                        color = CalSnapColors.Accent,
                                         strokeWidth = 2.dp,
                                     )
                                 }
@@ -325,10 +325,10 @@ fun SearchFoodScreen(
                     .align(Alignment.BottomCenter)
                     .padding(CalSnapSpacing.md)
                     .clip(RoundedCornerShape(CalSnapRadius.md))
-                    .background(CalSnapColors.Ink)
+                    .background(CalSnapColors.Bad)
                     .padding(horizontal = CalSnapSpacing.md, vertical = CalSnapSpacing.sm),
             ) {
-                Text(it, style = CalSnapType.Body, color = CalSnapColors.Background)
+                Text(it, style = CalSnapType.Body, color = CalSnapColors.OnAccent)
             }
         }
     }
@@ -366,7 +366,7 @@ private fun CategoryChip(label: String, isSelected: Boolean, onClick: () -> Unit
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(CalSnapRadius.pill))
-            .background(if (isSelected) CalSnapColors.Ink else CalSnapColors.SurfaceAlt)
+            .background(if (isSelected) CalSnapColors.Accent else CalSnapColors.SurfaceAlt)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -377,7 +377,7 @@ private fun CategoryChip(label: String, isSelected: Boolean, onClick: () -> Unit
         Text(
             text = label,
             style = CalSnapType.Label,
-            color = if (isSelected) CalSnapColors.Background else CalSnapColors.Muted,
+            color = if (isSelected) CalSnapColors.OnAccent else CalSnapColors.Muted,
         )
     }
 }
@@ -612,7 +612,7 @@ private fun FoodDetailSheet(
                             .weight(1f)
                             .height(38.dp)
                             .clip(RoundedCornerShape(CalSnapRadius.md))
-                            .background(if (isSelected) CalSnapColors.Ink else CalSnapColors.SurfaceAlt)
+                            .background(if (isSelected) CalSnapColors.Accent else CalSnapColors.SurfaceAlt)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
@@ -623,7 +623,7 @@ private fun FoodDetailSheet(
                         Text(
                             text = type.lowercase().replaceFirstChar { it.uppercase() },
                             style = CalSnapType.Label,
-                            color = if (isSelected) CalSnapColors.Background else CalSnapColors.Muted,
+                            color = if (isSelected) CalSnapColors.OnAccent else CalSnapColors.Muted,
                         )
                     }
                 }

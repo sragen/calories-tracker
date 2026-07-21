@@ -57,7 +57,7 @@ fun ProfileScreen(
             state.isLoading -> {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color = CalSnapColors.Red,
+                    color = CalSnapColors.Accent,
                 )
             }
             else -> {
@@ -139,9 +139,7 @@ private fun UserCard(name: String?, email: String?, streak: Int) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 4.dp, shape = RoundedCornerShape(22.dp), ambientColor = Color(0x0A140F08), spotColor = Color(0x0F140F08))
-            .clip(RoundedCornerShape(22.dp))
-            .background(CalSnapColors.Background)
+            .calSnapCard(radius = 22.dp)
             .padding(20.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -152,7 +150,7 @@ private fun UserCard(name: String?, email: String?, streak: Int) {
                 .clip(CircleShape)
                 .background(
                     Brush.linearGradient(
-                        colors = listOf(CalSnapColors.Carb, CalSnapColors.Red),
+                        colors = listOf(CalSnapColors.Carb, CalSnapColors.Accent),
                         start = Offset(0f, 0f),
                         end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
                     )
@@ -161,7 +159,7 @@ private fun UserCard(name: String?, email: String?, streak: Int) {
         ) {
             Text(
                 text = initial,
-                color = Color.White,
+                color = CalSnapColors.OnAccent,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.W700,
             )
@@ -188,15 +186,15 @@ private fun UserCard(name: String?, email: String?, streak: Int) {
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(CalSnapRadius.pill))
-                        .background(CalSnapColors.RedSoft)
+                        .background(CalSnapColors.AccentSoft)
                         .padding(horizontal = 8.dp, vertical = 3.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    CalSnapIcon(name = "flame", size = 11.dp, color = CalSnapColors.Red, strokeWidth = 2.4f)
+                    CalSnapIcon(name = "flame", size = 11.dp, color = CalSnapColors.Accent, strokeWidth = 2.4f)
                     Text(
                         text = "$streak-day streak",
-                        color = CalSnapColors.Red,
+                        color = CalSnapColors.Accent,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.W700,
                     )
@@ -242,9 +240,7 @@ private fun formatThousands(n: Int): String =
 private fun MiniStatCard(label: String, value: String, unit: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .shadow(elevation = 2.dp, shape = RoundedCornerShape(16.dp), ambientColor = Color(0x0A140F08), spotColor = Color(0x0A140F08))
-            .clip(RoundedCornerShape(16.dp))
-            .background(CalSnapColors.Background)
+            .calSnapCard(radius = 16.dp)
             .padding(vertical = 14.dp, horizontal = 12.dp),
     ) {
         Text(
@@ -329,8 +325,8 @@ private fun AppSection(
             icon = "sparkle",
             label = "CalSnap Pro",
             detail = if (entitlement?.entitled == true) "Active" else "Manage subscription",
-            iconBg = CalSnapColors.Red,
-            iconTint = Color.White,
+            iconBg = CalSnapColors.Accent,
+            iconTint = CalSnapColors.OnAccent,
             onClick = onSubscription,
         )
         SettingsRow(
@@ -342,7 +338,7 @@ private fun AppSection(
             icon = "close",
             label = "Sign Out",
             detail = "",
-            labelColor = CalSnapColors.Red,
+            labelColor = CalSnapColors.Accent,
             isLast = true,
             onClick = onLogout,
         )
@@ -362,9 +358,7 @@ private fun SectionGroup(title: String, content: @Composable () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 4.dp, shape = RoundedCornerShape(18.dp), ambientColor = Color(0x0A140F08), spotColor = Color(0x0F140F08))
-            .clip(RoundedCornerShape(18.dp))
-            .background(CalSnapColors.Background),
+            .calSnapCard(radius = 18.dp),
     ) {
         content()
     }

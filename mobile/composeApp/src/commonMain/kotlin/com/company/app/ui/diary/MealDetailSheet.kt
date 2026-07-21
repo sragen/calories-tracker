@@ -106,7 +106,7 @@ fun MealDetailSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(CalSnapRadius.md))
-                    .background(CalSnapColors.RedSoft)
+                    .background(CalSnapColors.BadSoft)
                     .clickable(
                         enabled = !isDeleting,
                         interactionSource = remember { MutableInteractionSource() },
@@ -120,17 +120,17 @@ fun MealDetailSheet(
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
                         strokeWidth = 2.dp,
-                        color = CalSnapColors.Red,
+                        color = CalSnapColors.Bad,
                     )
                 } else {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        CalSnapIcon(name = "trash", size = 18.dp, color = CalSnapColors.Red, strokeWidth = 2f)
+                        CalSnapIcon(name = "trash", size = 18.dp, color = CalSnapColors.Bad, strokeWidth = 2f)
                         Text(
                             text = "Delete this meal",
-                            color = CalSnapColors.Red,
+                            color = CalSnapColors.Bad,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.W600,
                         )
@@ -147,12 +147,12 @@ private fun MealTypeChip(mealType: String) {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(CalSnapRadius.pill))
-            .background(CalSnapColors.Ink)
+            .background(CalSnapColors.Accent)
             .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
         Text(
             text = label,
-            color = Color.White,
+            color = CalSnapColors.OnAccent,
             fontSize = 12.sp,
             fontWeight = FontWeight.W600,
         )

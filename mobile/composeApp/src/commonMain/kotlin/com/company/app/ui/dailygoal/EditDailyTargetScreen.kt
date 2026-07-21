@@ -24,12 +24,12 @@ import kotlinx.coroutines.launch
 
 // ── Design tokens from screens-phase3-classic.jsx ────────────────────────────
 
-private val ProteinColor = Color(0xFFE63946)
-private val CarbColor    = Color(0xFFF4A23A)
-private val FatColor     = Color(0xFF5A8DEF)
+private val ProteinColor = CalSnapColors.Protein
+private val CarbColor    = CalSnapColors.Carb
+private val FatColor     = CalSnapColors.Fat
 
-private val CardShadowAmbient = Color(0x0A140F08)
-private val CardShadowSpot    = Color(0x12140F08)
+private val CardShadowAmbient = CalSnapColors.ShadowAmbient
+private val CardShadowSpot    = CalSnapColors.ShadowSpot
 
 private data class PresetMeta(
     val type: String,
@@ -41,9 +41,9 @@ private data class PresetMeta(
 )
 
 private val PRESET_META = listOf(
-    PresetMeta("CUT",      "🔥", "Cut",      "Deficit ~20%", "Weight loss", Color(0xFFE63946)),
-    PresetMeta("MAINTAIN", "⚖️", "Maintain", "TDEE",         "Hold weight", Color(0xFF0E0E0E)),
-    PresetMeta("BULK",     "💪", "Bulk",     "Surplus ~15%", "Muscle gain", Color(0xFF5A8DEF)),
+    PresetMeta("CUT",      "🔥", "Cut",      "Deficit ~20%", "Weight loss", CalSnapColors.Accent),
+    PresetMeta("MAINTAIN", "⚖️", "Maintain", "TDEE",         "Hold weight", CalSnapColors.Good),
+    PresetMeta("BULK",     "💪", "Bulk",     "Surplus ~15%", "Muscle gain", CalSnapColors.Fat),
 )
 
 // ── Screen entry ──────────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ fun EditDailyTargetScreen(
         when {
             state.isLoading -> CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),
-                color = CalSnapColors.Red,
+                color = CalSnapColors.Accent,
             )
             state.error != null -> ErrorState(state.error!!, onRetry = viewModel::load)
             else -> MainContent(state, viewModel, onBack, onSaved, haptic)
@@ -80,7 +80,7 @@ fun EditDailyTargetScreen(
             ModalBottomSheet(
                 onDismissRequest = viewModel::closeKeypad,
                 sheetState = sheetState,
-                containerColor = Color.White,
+                containerColor = CalSnapColors.Card,
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 dragHandle = {
                     Box(
@@ -159,7 +159,7 @@ private fun MainContent(
                     text = "Reset",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.W600,
-                    color = CalSnapColors.Red,
+                    color = CalSnapColors.Accent,
                     modifier = Modifier.clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -247,11 +247,11 @@ private fun MainContent(
                     .shadow(
                         elevation = 12.dp,
                         shape = RoundedCornerShape(28.dp),
-                        ambientColor = CalSnapColors.Red.copy(alpha = 0.35f),
-                        spotColor    = CalSnapColors.Red.copy(alpha = 0.35f),
+                        ambientColor = CalSnapColors.Accent.copy(alpha = 0.35f),
+                        spotColor    = CalSnapColors.Accent.copy(alpha = 0.35f),
                     )
                     .clip(RoundedCornerShape(28.dp))
-                    .background(CalSnapColors.Red)
+                    .background(CalSnapColors.Accent)
                     .clickable(
                         enabled = !state.isSaving,
                         interactionSource = remember { MutableInteractionSource() },
@@ -263,7 +263,7 @@ private fun MainContent(
                 if (state.isSaving) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = Color.White,
+                        color = CalSnapColors.OnAccent,
                         strokeWidth = 2.5.dp,
                     )
                 } else {
@@ -271,7 +271,7 @@ private fun MainContent(
                         text = "Save goals",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.W700,
-                        color = Color.White,
+                        color = CalSnapColors.OnAccent,
                     )
                 }
             }
@@ -317,7 +317,7 @@ private fun GoalsHeader(onBack: () -> Unit) {
         Box(
             modifier = Modifier
                 .clip(CircleShape)
-                .background(Color.White)
+                .background(CalSnapColors.Card)
                 .border(width = 1.dp, color = CalSnapColors.Border, shape = CircleShape)
                 .padding(horizontal = 12.dp, vertical = 6.dp),
         ) {
@@ -347,14 +347,8 @@ private fun HeroDonutCard(state: EditDailyTargetState) {
         modifier = Modifier
             .padding(horizontal = 20.dp)
             .fillMaxWidth()
-            .shadow(
-                elevation = 8.dp,
-                shape = RoundedCornerShape(24.dp),
-                ambientColor = CardShadowAmbient,
-                spotColor    = CardShadowSpot,
-            )
             .clip(RoundedCornerShape(24.dp))
-            .background(Color.White)
+            .background(CalSnapColors.Card)
             .border(width = 1.dp, color = CalSnapColors.Border, shape = RoundedCornerShape(24.dp))
             .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 22.dp),
     ) {
@@ -383,6 +377,7 @@ private fun HeroDonutCard(state: EditDailyTargetState) {
                     Text(
                         text = state.calories.toInt().toString(),
                         fontSize = 30.sp,
+                        fontFamily = numeralFont,
                         fontWeight = FontWeight.W700,
                         color = CalSnapColors.Ink,
                         letterSpacing = (-0.9).sp,
@@ -411,7 +406,7 @@ private fun HeroDonutCard(state: EditDailyTargetState) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFFEF3E0))
+                    .background(CalSnapColors.CarbBg)
                     .border(
                         width = 1.dp,
                         color = CalSnapColors.Warn.copy(alpha = 0.25f),
@@ -427,7 +422,7 @@ private fun HeroDonutCard(state: EditDailyTargetState) {
                         .background(CalSnapColors.Warn, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("!", fontSize = 13.sp, fontWeight = FontWeight.W700, color = Color.White)
+                    Text("!", fontSize = 13.sp, fontWeight = FontWeight.W700, color = CalSnapColors.OnAccent)
                 }
                 Text(
                     text = "Macros add up to $macroKcal kcal, exceeding your ${state.calories.toInt()} target.",
@@ -500,7 +495,7 @@ private fun ClassicDonut(
             val gapDeg = 2f
 
             drawArc(
-                color = Color(0xFFF1ECE2),
+                color = CalSnapColors.Divider,
                 startAngle = -90f,
                 sweepAngle = 360f,
                 useCenter = false,
@@ -589,7 +584,7 @@ private fun PresetCard(
                 spotColor = shadowColor,
             )
             .clip(RoundedCornerShape(20.dp))
-            .background(Color.White)
+            .background(CalSnapColors.Card)
             .border(width = borderWidth, color = borderColor, shape = RoundedCornerShape(20.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -606,7 +601,7 @@ private fun PresetCard(
                     .background(meta.accent, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                CalSnapIcon(name = "check", size = 12.dp, color = Color.White, strokeWidth = 3f)
+                CalSnapIcon(name = "check", size = 12.dp, color = CalSnapColors.OnAccent, strokeWidth = 3f)
             }
         }
 
@@ -673,14 +668,8 @@ private fun MacroInput(
 
     Column(
         modifier = modifier
-            .shadow(
-                elevation = if (isFocused) 6.dp else 4.dp,
-                shape = RoundedCornerShape(16.dp),
-                ambientColor = CardShadowAmbient,
-                spotColor = CardShadowSpot,
-            )
             .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
+            .background(CalSnapColors.Card)
             .border(width = borderWidth, color = borderColor, shape = RoundedCornerShape(16.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -768,7 +757,7 @@ private fun KeypadSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp)
                 .clip(RoundedCornerShape(24.dp))
-                .background(Color.White)
+                .background(CalSnapColors.Card)
                 .border(1.dp, CalSnapColors.Border, RoundedCornerShape(24.dp))
                 .padding(vertical = 24.dp, horizontal = 22.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -785,6 +774,7 @@ private fun KeypadSheet(
                 Text(
                     text = if (buffer.isEmpty()) "0" else buffer,
                     fontSize = 56.sp,
+                    fontFamily = numeralFont,
                     fontWeight = FontWeight.W700,
                     color = CalSnapColors.Ink,
                     letterSpacing = (-2).sp,
@@ -795,7 +785,7 @@ private fun KeypadSheet(
                         .padding(start = 2.dp, bottom = 8.dp)
                         .width(2.dp)
                         .height(40.dp)
-                        .background(CalSnapColors.Red),
+                        .background(CalSnapColors.Accent),
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
@@ -840,7 +830,7 @@ private fun KeypadSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color.White)
+                .background(CalSnapColors.Card)
                 .padding(horizontal = 8.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
@@ -851,7 +841,7 @@ private fun KeypadSheet(
                 Box(
                     modifier = Modifier
                         .clip(CircleShape)
-                        .background(CalSnapColors.Red)
+                        .background(CalSnapColors.Accent)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -859,7 +849,7 @@ private fun KeypadSheet(
                         )
                         .padding(horizontal = 18.dp, vertical = 8.dp),
                 ) {
-                    Text("Done", fontSize = 13.sp, fontWeight = FontWeight.W700, color = Color.White)
+                    Text("Done", fontSize = 13.sp, fontWeight = FontWeight.W700, color = CalSnapColors.OnAccent)
                 }
             }
             val keys = listOf(
@@ -918,7 +908,7 @@ private fun BoxScope.ErrorState(message: String, onRetry: () -> Unit) {
         Text(message, color = CalSnapColors.Muted, fontSize = 14.sp)
         Button(
             onClick = onRetry,
-            colors = ButtonDefaults.buttonColors(containerColor = CalSnapColors.Red),
+            colors = ButtonDefaults.buttonColors(containerColor = CalSnapColors.Accent),
         ) {
             Text("Retry")
         }

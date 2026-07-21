@@ -1,13 +1,13 @@
 package com.company.app.ui.components
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.company.app.ui.theme.CalSnapColors
+import com.company.app.ui.theme.CalSnapMotion
 
 /**
  * Calorie progress ring used on the Home dashboard.
@@ -45,12 +46,23 @@ fun CalSnapRing(
         modifier = modifier.size(size),
     ) {
         val target = progress.coerceIn(0f, 1f)
-        val animated by animateFloatAsState(
-            targetValue = target,
-            animationSpec = tween(durationMillis = 700, easing = FastOutSlowInEasing),
-            label = "ringSweep",
-        )
-        val clampedProgress = if (animate) animated else target
+
+        // A1 — fill from empty on mount, then track later changes.
+        // `animateFloatAsState` alone cannot do this: it initialises *at* the
+        // target on first composition, so the arc would simply appear complete.
+        val sweep = remember { Animatable(0f) }
+        LaunchedEffect(target, animate) {
+            if (animate) {
+                sweep.animateTo(
+                    targetValue = target,
+                    animationSpec = CalSnapMotion.ringSpring(),
+                )
+            } else {
+                sweep.snapTo(target)
+            }
+        }
+        // The spring overshoots by design; clamp so the arc never laps itself.
+        val clampedProgress = sweep.value.coerceIn(0f, 1f)
         Canvas(modifier = Modifier.size(size)) {
             val stroke = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
             val inset = strokeWidth.toPx() / 2f

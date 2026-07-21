@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.SubcomposeAsyncImage
+import com.company.app.ui.theme.CalSnapColors
 import kotlin.math.abs
 
 /**
@@ -67,7 +68,7 @@ private fun GradientFallback(name: String, modifier: Modifier) {
             text = initial,
             fontSize = 18.sp,
             fontWeight = FontWeight.W600,
-            color = Color.White.copy(alpha = 0.95f),
+            color = CalSnapColors.OnDark.copy(alpha = 0.95f),
         )
     }
 }

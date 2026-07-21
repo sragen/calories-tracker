@@ -116,7 +116,7 @@ private fun ActivityCard(
             .background(if (isSelected) CalSnapColors.Surface else CalSnapColors.Background)
             .border(
                 width = if (isSelected) 2.dp else 1.dp,
-                color = if (isSelected) CalSnapColors.Ink else CalSnapColors.Border,
+                color = if (isSelected) CalSnapColors.Accent else CalSnapColors.Border,
                 shape = RoundedCornerShape(CalSnapRadius.card),
             )
             .clickable(onClick = onClick)
@@ -128,13 +128,13 @@ private fun ActivityCard(
             modifier = Modifier
                 .size(40.dp)
                 .clip(RoundedCornerShape(CalSnapRadius.md))
-                .background(if (isSelected) CalSnapColors.Ink else CalSnapColors.SurfaceAlt),
+                .background(if (isSelected) CalSnapColors.Accent else CalSnapColors.SurfaceAlt),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = option.number,
                 style = CalSnapType.HeadlineMedium,
-                color = if (isSelected) CalSnapColors.Background else CalSnapColors.Ink,
+                color = if (isSelected) CalSnapColors.OnAccent else CalSnapColors.Ink,
             )
         }
 

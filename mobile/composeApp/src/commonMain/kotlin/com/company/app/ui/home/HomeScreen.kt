@@ -2,6 +2,8 @@ package com.company.app.ui.home
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
@@ -72,7 +74,7 @@ fun HomeScreen(
             state.isLoading -> {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color = CalSnapColors.Red,
+                    color = CalSnapColors.Accent,
                 )
             }
             state.error != null -> {
@@ -88,7 +90,10 @@ fun HomeScreen(
                     )
                     Button(
                         onClick = viewModel::loadDiary,
-                        colors = ButtonDefaults.buttonColors(containerColor = CalSnapColors.Ink),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = CalSnapColors.Accent,
+                            contentColor = CalSnapColors.OnAccent,
+                        ),
                         shape = RoundedCornerShape(CalSnapRadius.pill),
                     ) {
                         Text("Retry", style = CalSnapType.ButtonLarge)
@@ -223,7 +228,7 @@ private fun HomeTopBar(streak: Int, userName: String?, onProfile: () -> Unit) {
                 .clip(CircleShape)
                 .background(
                     Brush.linearGradient(
-                        colors = listOf(CalSnapColors.Carb, CalSnapColors.Red),
+                        colors = listOf(CalSnapColors.Carb, CalSnapColors.Accent),
                         start = Offset(0f, 0f),
                         end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
                     )
@@ -237,7 +242,7 @@ private fun HomeTopBar(streak: Int, userName: String?, onProfile: () -> Unit) {
         ) {
             Text(
                 text = initial,
-                color = Color.White,
+                color = CalSnapColors.OnAccent,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.W700,
             )
@@ -264,15 +269,15 @@ private fun HomeTopBar(streak: Int, userName: String?, onProfile: () -> Unit) {
             Row(
                 modifier = Modifier
                     .clip(RoundedCornerShape(CalSnapRadius.pill))
-                    .background(CalSnapColors.RedSoft)
+                    .background(CalSnapColors.AccentSoft)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                CalSnapIcon(name = "streak", size = 14.dp, color = CalSnapColors.Red, strokeWidth = 2.4f)
+                CalSnapIcon(name = "streak", size = 14.dp, color = CalSnapColors.Accent, strokeWidth = 2.4f)
                 Text(
                     text = "$streak",
-                    color = CalSnapColors.Red,
+                    color = CalSnapColors.Accent,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.W700,
                 )
@@ -309,7 +314,7 @@ private fun greetingFor(hour: Int, firstName: String?): String {
 private fun CalorieDashboardCard(summary: NutritionSummary, onEditGoal: () -> Unit = {}, modifier: Modifier = Modifier) {
     val progress = (summary.caloriesPercent / 100f).coerceIn(0f, 1f)
     val isOver = summary.caloriesPercent > 100
-    val ringColor = if (isOver) CalSnapColors.Red else CalSnapColors.Ink
+    val ringColor = if (isOver) CalSnapColors.Bad else CalSnapColors.Accent
     val displayCals = summary.remainingCalories.toInt().coerceAtLeast(0)
     val pct = summary.caloriesPercent.toInt().coerceIn(0, 999)
 
@@ -319,14 +324,7 @@ private fun CalorieDashboardCard(summary: NutritionSummary, onEditGoal: () -> Un
 
     Column(
         modifier = modifier
-            .shadow(
-                elevation = 6.dp,
-                shape = RoundedCornerShape(28.dp),
-                ambientColor = Color(0x0A140F08),
-                spotColor = Color(0x10140F08),
-            )
-            .clip(RoundedCornerShape(28.dp))
-            .background(CalSnapColors.Background)
+            .calSnapAccentLift(radius = 28.dp)
             .padding(horizontal = 20.dp)
             .padding(top = 20.dp, bottom = 24.dp),
     ) {
@@ -369,10 +367,18 @@ private fun CalorieDashboardCard(summary: NutritionSummary, onEditGoal: () -> Un
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Column(modifier = Modifier.weight(1f)) {
+                // A1 — count up in step with the ring sweep.
+                val countUp = remember { Animatable(0f) }
+                LaunchedEffect(displayCals) {
+                    countUp.animateTo(
+                        targetValue = displayCals.toFloat(),
+                        animationSpec = tween(CalSnapMotion.RingFillMs, easing = EaseOutQuart),
+                    )
+                }
                 Text(
-                    text = "$displayCals",
-                    style = CalSnapType.Hero,
-                    color = if (isOver) CalSnapColors.Red else CalSnapColors.Ink,
+                    text = "${countUp.value.roundToInt()}",
+                    style = CalSnapType.Hero.copy(fontFamily = numeralFont),
+                    color = if (isOver) CalSnapColors.Bad else CalSnapColors.Ink,
                 )
                 Text(
                     text = "${summary.totalCalories.toInt()} eaten so far",
@@ -381,23 +387,31 @@ private fun CalorieDashboardCard(summary: NutritionSummary, onEditGoal: () -> Un
                 )
             }
 
-            CalSnapRing(
-                progress = progress,
-                size = 120.dp,
-                strokeWidth = 12.dp,
-                color = ringColor,
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
+            // Glow sits behind the ring so it lifts off the card surface.
+            Box(contentAlignment = Alignment.Center) {
+                CalSnapGlow(
+                    modifier = Modifier.size(150.dp),
+                    color = ringColor,
+                    alpha = 0.22f,
+                )
+                CalSnapRing(
+                    progress = progress,
+                    size = 120.dp,
+                    strokeWidth = 12.dp,
+                    color = ringColor,
                 ) {
-                    CalSnapIcon(name = "flame", size = 28.dp, color = CalSnapColors.Red, strokeWidth = 2f)
-                    Text(
-                        text = "$pct%",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.W700,
-                        color = CalSnapColors.Ink,
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        CalSnapIcon(name = "flame", size = 28.dp, color = CalSnapColors.Accent, strokeWidth = 2f)
+                        Text(
+                            text = "$pct%",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.W700,
+                            color = CalSnapColors.Ink,
+                        )
+                    }
                 }
             }
         }
@@ -455,8 +469,8 @@ private fun QuickActions(
         QuickActionButton(
             icon = "camera",
             label = "Snap",
-            bgColor = CalSnapColors.Ink,
-            contentColor = Color.White,
+            bgColor = CalSnapColors.Accent,
+            contentColor = CalSnapColors.OnAccent,
             elevated = true,
             modifier = Modifier.weight(1f),
             onClick = onSnap,
@@ -492,11 +506,11 @@ private fun QuickActionButton(
 ) {
     Row(
         modifier = modifier
-            .shadow(
-                elevation = if (elevated) 6.dp else 2.dp,
-                shape = RoundedCornerShape(16.dp),
-                ambientColor = if (elevated) Color.Black.copy(alpha = 0.15f) else Color(0x0A140F08),
-                spotColor = if (elevated) Color.Black.copy(alpha = 0.15f) else Color(0x0A140F08),
+            // `elevated` marks the accent-filled Snap action; it needs no border
+            // because the volt fill already separates it from the background.
+            .then(
+                if (elevated) Modifier
+                else Modifier.border(1.dp, CalSnapColors.Border, RoundedCornerShape(16.dp))
             )
             .clip(RoundedCornerShape(16.dp))
             .background(bgColor)
@@ -550,7 +564,7 @@ private fun TodaysMealsSection(
                 text = "See all",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.W600,
-                color = CalSnapColors.Red,
+                color = CalSnapColors.Accent,
             )
         }
 
@@ -609,7 +623,7 @@ private fun MealRowItem(
                 modifier = Modifier
                     .width(revealWidth)
                     .fillMaxHeight()
-                    .background(CalSnapColors.Red)
+                    .background(CalSnapColors.Bad)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -624,17 +638,17 @@ private fun MealRowItem(
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
                         strokeWidth = 2.dp,
-                        color = Color.White,
+                        color = CalSnapColors.OnAccent,
                     )
                 } else {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        CalSnapIcon(name = "trash", size = 18.dp, color = Color.White, strokeWidth = 2f)
+                        CalSnapIcon(name = "trash", size = 18.dp, color = CalSnapColors.OnAccent, strokeWidth = 2f)
                         Text(
                             text = "Delete",
-                            color = Color.White,
+                            color = CalSnapColors.OnAccent,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.W600,
                         )

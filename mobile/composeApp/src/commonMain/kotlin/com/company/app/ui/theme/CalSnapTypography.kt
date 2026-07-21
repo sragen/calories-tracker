@@ -5,19 +5,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 object CalSnapType {
-    // Display — plan reveal "2,140" and scan result kcal
+    // Display — plan reveal "2,140" and scan result kcal.
+    // Pair with `fontFamily = numeralFont` at the call site.
     val Display = TextStyle(
-        fontSize = 84.sp,
+        fontSize = 60.sp,
         fontWeight = FontWeight.W700,
-        letterSpacing = (-3).sp,
-        lineHeight = 84.sp,
+        letterSpacing = (-1.8).sp,
+        lineHeight = 62.sp,
     )
 
-    // Hero — remaining kcal on Home card
+    // Hero — remaining kcal inside the Home ring
     val Hero = TextStyle(
-        fontSize = 64.sp,
+        fontSize = 54.sp,
         fontWeight = FontWeight.W700,
-        letterSpacing = (-2.5).sp,
+        letterSpacing = (-1.6).sp,
     )
 
     // HeadlineLarge — onboarding screen titles

@@ -197,10 +197,10 @@ fun SubmitFoodScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(CalSnapRadius.md))
-                            .background(CalSnapColors.RedSoft)
+                            .background(CalSnapColors.BadSoft)
                             .padding(CalSnapSpacing.md),
                     ) {
-                        Text(it, style = CalSnapType.Body, color = CalSnapColors.Red)
+                        Text(it, style = CalSnapType.Body, color = CalSnapColors.Bad)
                     }
                 }
 

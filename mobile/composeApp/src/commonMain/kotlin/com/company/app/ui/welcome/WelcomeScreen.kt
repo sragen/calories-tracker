@@ -36,8 +36,10 @@ fun WelcomeScreen(
     Box(modifier = Modifier.fillMaxSize().background(CalSnapColors.Background).statusBarsPadding().navigationBarsPadding()) {
         Column(modifier = Modifier.fillMaxSize()) {
 
-            // ── Hero food photo (460dp) ──────────────────────────────────────
-            Box(modifier = Modifier.fillMaxWidth().height(460.dp)) {
+            // ── Hero food photo ──────────────────────────────────────────────
+            // Flexible, not a fixed 460dp: the photo absorbs the height
+            // difference between devices so the copy below is never clipped.
+            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
                 Image(
                     painter = painterResource(Res.drawable.veg_hero),
                     contentDescription = null,
@@ -48,10 +50,10 @@ fun WelcomeScreen(
                 Box(
                     modifier = Modifier.fillMaxSize().background(
                         Brush.verticalGradient(
-                            0.00f to Color(0x59000000),  // rgba(0,0,0,0.35)
-                            0.25f to Color(0x00000000),
-                            0.75f to Color(0x00000000),
-                            1.00f to Color(0x66FFFFFF),  // rgba(255,255,255,0.4)
+                            0.00f to CalSnapColors.Scrim.copy(alpha = 0.35f),  // rgba(0,0,0,0.35)
+                            0.25f to Color.Transparent,
+                            0.75f to Color.Transparent,
+                            1.00f to CalSnapColors.Background.copy(alpha = 0.4f),  // rgba(255,255,255,0.4)
                         )
                     )
                 )
@@ -68,17 +70,17 @@ fun WelcomeScreen(
                             modifier = Modifier
                                 .size(30.dp)
                                 .clip(RoundedCornerShape(9.dp))
-                                .background(Color.White),
+                                .background(CalSnapColors.Card),
                             contentAlignment = Alignment.Center,
                         ) {
-                            CalSnapIcon(name = "camera", size = 17.dp, color = CalSnapColors.Red, strokeWidth = 2.2f)
+                            CalSnapIcon(name = "camera", size = 17.dp, color = CalSnapColors.Accent, strokeWidth = 2.2f)
                         }
                         Text(
                             text = "CalSnap",
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = (-0.5).sp,
-                            color = Color.White,
+                            color = CalSnapColors.OnDark,
                         )
                     }
                 }
@@ -87,13 +89,12 @@ fun WelcomeScreen(
             // ── Copy block ───────────────────────────────────────────────────
             Column(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 28.dp, end = 28.dp, top = 32.dp),
+                    .padding(start = 28.dp, end = 28.dp, top = 28.dp),
             ) {
                 Text(
                     text = buildAnnotatedString {
                         append("Snap your food.\n")
-                        withStyle(SpanStyle(color = CalSnapColors.Red)) {
+                        withStyle(SpanStyle(color = CalSnapColors.Accent)) {
                             append("Track your goals.")
                         }
                     },

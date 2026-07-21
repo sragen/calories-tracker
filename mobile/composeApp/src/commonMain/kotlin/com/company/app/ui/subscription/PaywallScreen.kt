@@ -38,7 +38,7 @@ private val FEATURES = listOf(
     Triple("edit", "Custom recipes & meals", "Save your go-tos, sync everywhere"),
 )
 
-private val Amber = Color(0xFFF4A23A)
+private val Amber = CalSnapColors.Carb
 
 @Composable
 fun PaywallScreen(
@@ -115,7 +115,7 @@ private fun PaywallContent(
                         .fillMaxSize()
                         .background(
                             Brush.radialGradient(
-                                colors = listOf(CalSnapColors.RedDark, Color.Transparent),
+                                colors = listOf(CalSnapColors.AccentDim, Color.Transparent),
                                 center = Offset(0.3f * 1000f, 0.2f * 1000f),
                                 radius = 480f,
                             ),
@@ -141,7 +141,7 @@ private fun PaywallContent(
                         .align(Alignment.TopEnd)
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.15f))
+                        .background(CalSnapColors.OnDark.copy(alpha = 0.15f))
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -149,7 +149,7 @@ private fun PaywallContent(
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CalSnapIcon(name = "close", size = 18.dp, color = Color.White, strokeWidth = 2.2f)
+                    CalSnapIcon(name = "close", size = 18.dp, color = CalSnapColors.OnDark, strokeWidth = 2.2f)
                 }
 
                 // CalSnap Pro pill
@@ -158,15 +158,15 @@ private fun PaywallContent(
                         .padding(top = 80.dp)
                         .align(Alignment.TopCenter)
                         .clip(RoundedCornerShape(999.dp))
-                        .background(Color.White.copy(alpha = 0.12f))
+                        .background(CalSnapColors.OnDark.copy(alpha = 0.12f))
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    CalSnapIcon(name = "sparkle", size = 16.dp, color = Color.White, strokeWidth = 2.4f)
+                    CalSnapIcon(name = "sparkle", size = 16.dp, color = CalSnapColors.OnDark, strokeWidth = 2.4f)
                     Text(
                         text = "CALSNAP PRO",
-                        color = Color.White,
+                        color = CalSnapColors.OnDark,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.W700,
                         letterSpacing = 0.4.sp,
@@ -181,7 +181,7 @@ private fun PaywallContent(
                     },
                     fontSize = 36.sp,
                     fontWeight = FontWeight.W700,
-                    color = Color.White,
+                    color = CalSnapColors.OnDark,
                     letterSpacing = (-1.2).sp,
                     lineHeight = 38.sp,
                     modifier = Modifier
@@ -240,7 +240,7 @@ private fun PaywallContent(
                     Text(
                         text = priceFooter,
                         fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.5f),
+                        color = CalSnapColors.OnDark.copy(alpha = 0.5f),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                     )
@@ -251,10 +251,10 @@ private fun PaywallContent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.copy(alpha = 0.08f))
+                            .background(CalSnapColors.OnDark.copy(alpha = 0.08f))
                             .padding(12.dp),
                     ) {
-                        Text(it, fontSize = 13.sp, color = Color.White.copy(alpha = 0.9f))
+                        Text(it, fontSize = 13.sp, color = CalSnapColors.OnDark.copy(alpha = 0.9f))
                     }
                 }
             }
@@ -271,7 +271,7 @@ private fun PaywallContent(
                         .fillMaxWidth()
                         .height(58.dp)
                         .clip(RoundedCornerShape(30.dp))
-                        .background(Color.White)
+                        .background(CalSnapColors.OnDark)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -331,14 +331,14 @@ private fun FeatureRow(icon: String, title: String, subtitle: String) {
         Column(modifier = Modifier.weight(1f).padding(top = 2.dp)) {
             Text(
                 text = title,
-                color = Color.White,
+                color = CalSnapColors.OnDark,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.W700,
                 letterSpacing = (-0.2).sp,
             )
             Text(
                 text = subtitle,
-                color = Color.White.copy(alpha = 0.55f),
+                color = CalSnapColors.OnDark.copy(alpha = 0.55f),
                 fontSize = 13.sp,
                 modifier = Modifier.padding(top = 2.dp),
             )
@@ -361,10 +361,10 @@ private fun PlanCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(18.dp))
-                .background(if (selected) Color.White else Color.White.copy(alpha = 0.06f))
+                .background(if (selected) CalSnapColors.Accent else CalSnapColors.OnDark.copy(alpha = 0.06f))
                 .border(
                     width = if (selected) 0.dp else 1.dp,
-                    color = if (selected) Color.Transparent else Color.White.copy(alpha = 0.12f),
+                    color = if (selected) Color.Transparent else CalSnapColors.OnDark.copy(alpha = 0.12f),
                     shape = RoundedCornerShape(18.dp),
                 )
                 .clickable(
@@ -376,13 +376,13 @@ private fun PlanCard(
         ) {
             Text(
                 text = title,
-                color = if (selected) CalSnapColors.Ink.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.7f),
+                color = if (selected) CalSnapColors.OnAccent.copy(alpha = 0.7f) else CalSnapColors.OnDark.copy(alpha = 0.7f),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.W600,
             )
             Text(
                 text = price,
-                color = if (selected) CalSnapColors.Ink else Color.White,
+                color = if (selected) CalSnapColors.OnAccent else CalSnapColors.OnDark,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.W700,
                 letterSpacing = (-0.6).sp,
@@ -390,7 +390,7 @@ private fun PlanCard(
             )
             Text(
                 text = sub,
-                color = if (selected) CalSnapColors.Ink.copy(alpha = 0.6f) else Color.White.copy(alpha = 0.6f),
+                color = if (selected) CalSnapColors.OnAccent.copy(alpha = 0.7f) else CalSnapColors.OnDark.copy(alpha = 0.6f),
                 fontSize = 11.sp,
                 modifier = Modifier.padding(top = 1.dp),
             )
@@ -401,12 +401,12 @@ private fun PlanCard(
                     .align(Alignment.TopEnd)
                     .offset(x = (-10).dp, y = (-10).dp)
                     .clip(RoundedCornerShape(6.dp))
-                    .background(CalSnapColors.Red)
+                    .background(CalSnapColors.Accent)
                     .padding(horizontal = 8.dp, vertical = 4.dp),
             ) {
                 Text(
                     text = save,
-                    color = Color.White,
+                    color = CalSnapColors.OnDark,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.W700,
                     letterSpacing = 0.4.sp,
@@ -420,7 +420,7 @@ private fun PlanCard(
 private fun PaywallTextLink(text: String, onClick: () -> Unit) {
     Text(
         text = text,
-        color = Color.White.copy(alpha = 0.45f),
+        color = CalSnapColors.OnDark.copy(alpha = 0.45f),
         fontSize = 12.sp,
         modifier = Modifier
             .clickable(
@@ -436,7 +436,7 @@ private fun PaywallTextLink(text: String, onClick: () -> Unit) {
 private fun Dot() {
     Text(
         text = "·",
-        color = Color.White.copy(alpha = 0.45f),
+        color = CalSnapColors.OnDark.copy(alpha = 0.45f),
         fontSize = 12.sp,
         modifier = Modifier.padding(vertical = 4.dp),
     )

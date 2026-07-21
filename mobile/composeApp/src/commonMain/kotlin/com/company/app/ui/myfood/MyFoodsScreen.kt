@@ -2,6 +2,7 @@ package com.company.app.ui.myfood
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -200,7 +201,7 @@ fun MyFoodsTabContent(
     when {
         state.isLoading && state.foods.isEmpty() -> {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = CalSnapColors.Red)
+                CircularProgressIndicator(color = CalSnapColors.Accent)
             }
         }
         state.foods.isEmpty() && state.query.isBlank() -> {
@@ -226,7 +227,7 @@ fun MyFoodsTabContent(
                         value = state.query,
                         onValueChange = onSearch,
                         singleLine = true,
-                        cursorBrush = SolidColor(CalSnapColors.Red),
+                        cursorBrush = SolidColor(CalSnapColors.Accent),
                         textStyle = TextStyle(
                             fontSize = 14.sp,
                             color = CalSnapColors.Ink,
@@ -275,7 +276,7 @@ fun MyFoodsTabContent(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(CalSnapRadius.pill))
-                                .background(if (isActive) CalSnapColors.Ink else glassOrSurface())
+                                .background(if (isActive) CalSnapColors.Accent else glassOrSurface())
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
@@ -287,7 +288,7 @@ fun MyFoodsTabContent(
                                 text = sort.label,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.W600,
-                                color = if (isActive) Color.White else CalSnapColors.Muted,
+                                color = if (isActive) CalSnapColors.OnAccent else CalSnapColors.Muted,
                             )
                         }
                     }
@@ -349,9 +350,9 @@ private fun MyFoodCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(2.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x0A140F08), spotColor = Color(0x0A140F08))
             .clip(RoundedCornerShape(18.dp))
             .background(glassOrSurface())
+            .border(1.dp, CalSnapColors.Border, RoundedCornerShape(18.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -410,12 +411,12 @@ private fun MyFoodCard(
                     .clip(CircleShape)
                     .background(
                         Brush.linearGradient(
-                            listOf(CalSnapColors.Red, CalSnapColors.RedDark),
+                            listOf(CalSnapColors.Accent, CalSnapColors.AccentDim),
                             start = Offset(0f, 0f),
                             end = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY),
                         )
                     )
-                    .shadow(6.dp, CircleShape, ambientColor = CalSnapColors.Red.copy(alpha = 0.4f), spotColor = CalSnapColors.Red.copy(alpha = 0.4f))
+                    .shadow(6.dp, CircleShape, ambientColor = CalSnapColors.Accent.copy(alpha = 0.4f), spotColor = CalSnapColors.Accent.copy(alpha = 0.4f))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -423,7 +424,7 @@ private fun MyFoodCard(
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                CalSnapIcon(name = "plus", size = 18.dp, color = Color.White, strokeWidth = 2.4f)
+                CalSnapIcon(name = "plus", size = 18.dp, color = CalSnapColors.OnAccent, strokeWidth = 2.4f)
             }
         }
 
@@ -450,7 +451,7 @@ private fun MyFoodCard(
                 ActionChip(
                     label = "Delete",
                     icon = "close",
-                    tint = CalSnapColors.Red,
+                    tint = CalSnapColors.Accent,
                     modifier = Modifier.weight(1f),
                     onClick = { showActions = false; onDelete() },
                 )
@@ -526,11 +527,10 @@ private fun MyFoodsEmptyState() {
                 modifier = Modifier
                     .size(140.dp)
                     .clip(CircleShape)
-                    .background(glassOrSurface())
-                    .shadow(14.dp, CircleShape, ambientColor = Color(0x1A1C1408), spotColor = Color(0x1A1C1408)),
+                    .background(glassOrSurface()),
                 contentAlignment = Alignment.Center,
             ) {
-                CalSnapIcon(name = "star", size = 56.dp, color = CalSnapColors.Red, strokeWidth = 2f)
+                CalSnapIcon(name = "star", size = 56.dp, color = CalSnapColors.Accent, strokeWidth = 2f)
             }
 
             Spacer(Modifier.height(28.dp))
@@ -581,7 +581,7 @@ private fun QuickAddSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = if (isIosPlatform) Color(0xE0FFFDF5) else Color.White,
+        containerColor = if (isIosPlatform) CalSnapColors.SheetIos else CalSnapColors.Card,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         dragHandle = {
             Box(
@@ -589,7 +589,7 @@ private fun QuickAddSheet(
                     .padding(top = 14.dp, bottom = 2.dp)
                     .size(width = 40.dp, height = 5.dp)
                     .clip(RoundedCornerShape(3.dp))
-                    .background(Color(0x2E0E0E0E)),
+                    .background(CalSnapColors.Ink.copy(alpha = 0.18f)),
             )
         },
     ) {
@@ -639,7 +639,7 @@ private fun QuickAddSheet(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(if (isSelected) CalSnapColors.Ink else glassOrSurface())
+                                .background(if (isSelected) CalSnapColors.Accent else glassOrSurface())
                                 
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
@@ -655,7 +655,7 @@ private fun QuickAddSheet(
                                 text = type.lowercase().replaceFirstChar { it.uppercase() },
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.W700,
-                                color = if (isSelected) Color.White else CalSnapColors.Ink,
+                                color = if (isSelected) CalSnapColors.OnAccent else CalSnapColors.Ink,
                             )
                         }
                     }
@@ -675,7 +675,7 @@ private fun QuickAddSheet(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (isSelected) CalSnapColors.Red else glassOrSurface())
+                                .background(if (isSelected) CalSnapColors.Accent else glassOrSurface())
                                 
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
@@ -689,7 +689,7 @@ private fun QuickAddSheet(
                                 text = label,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.W700,
-                                color = if (isSelected) Color.White else CalSnapColors.Ink,
+                                color = if (isSelected) CalSnapColors.OnAccent else CalSnapColors.Ink,
                             )
                         }
                     }
@@ -701,7 +701,7 @@ private fun QuickAddSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
-                    .background(Color(0x0A0E0E0E))
+                    .background(CalSnapColors.Ink.copy(alpha = 0.04f))
                     .padding(14.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -738,7 +738,7 @@ private fun QuickAddSheet(
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(Color.White)
+                                .background(CalSnapColors.Card)
                                 .padding(horizontal = 9.dp, vertical = 5.dp),
                         ) {
                             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -759,7 +759,7 @@ private fun QuickAddSheet(
                     .clip(RoundedCornerShape(27.dp))
                     .background(
                         Brush.linearGradient(
-                            listOf(CalSnapColors.Red, CalSnapColors.RedDark),
+                            listOf(CalSnapColors.Accent, CalSnapColors.AccentDim),
                             start = Offset(0f, 0f),
                             end = Offset(Float.POSITIVE_INFINITY, 0f),
                         )
@@ -772,18 +772,18 @@ private fun QuickAddSheet(
                 contentAlignment = Alignment.Center,
             ) {
                 if (state.isLogging) {
-                    CircularProgressIndicator(modifier = Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(22.dp), color = CalSnapColors.OnAccent, strokeWidth = 2.dp)
                 } else {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        CalSnapIcon(name = "plus", size = 18.dp, color = Color.White, strokeWidth = 2.4f)
+                        CalSnapIcon(name = "plus", size = 18.dp, color = CalSnapColors.OnAccent, strokeWidth = 2.4f)
                         Text(
                             text = "Add to $mealLabel",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.W700,
-                            color = Color.White,
+                            color = CalSnapColors.OnAccent,
                         )
                     }
                 }
@@ -816,7 +816,7 @@ private fun CreateFoodSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = if (isIosPlatform) Color(0xE0FFFDF5) else Color.White,
+        containerColor = if (isIosPlatform) CalSnapColors.SheetIos else CalSnapColors.Card,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         dragHandle = {
             Box(
@@ -824,7 +824,7 @@ private fun CreateFoodSheet(
                     .padding(top = 14.dp, bottom = 2.dp)
                     .size(width = 40.dp, height = 5.dp)
                     .clip(RoundedCornerShape(3.dp))
-                    .background(Color(0x2E0E0E0E)),
+                    .background(CalSnapColors.Ink.copy(alpha = 0.18f)),
             )
         },
     ) {
@@ -845,10 +845,10 @@ private fun CreateFoodSheet(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(CalSnapColors.RedSoft),
+                        .background(CalSnapColors.AccentSoft),
                     contentAlignment = Alignment.Center,
                 ) {
-                    CalSnapIcon(name = "star", size = 20.dp, color = CalSnapColors.Red, strokeWidth = 2f)
+                    CalSnapIcon(name = "star", size = 20.dp, color = CalSnapColors.Accent, strokeWidth = 2f)
                 }
                 Column {
                     Text(
@@ -940,7 +940,7 @@ private fun CreateFoodSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0x14F4A23A))
+                    .background(CalSnapColors.Carb.copy(alpha = 0.08f))
                     .padding(12.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -964,7 +964,7 @@ private fun CreateFoodSheet(
                     .background(
                         if (canSave)
                             Brush.linearGradient(
-                                listOf(CalSnapColors.Red, CalSnapColors.RedDark),
+                                listOf(CalSnapColors.Accent, CalSnapColors.AccentDim),
                                 start = Offset(0f, 0f),
                                 end = Offset(Float.POSITIVE_INFINITY, 0f),
                             )
@@ -989,18 +989,18 @@ private fun CreateFoodSheet(
                 contentAlignment = Alignment.Center,
             ) {
                 if (isSaving) {
-                    CircularProgressIndicator(modifier = Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(22.dp), color = CalSnapColors.OnAccent, strokeWidth = 2.dp)
                 } else {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        CalSnapIcon(name = "star", size = 18.dp, color = Color.White, strokeWidth = 2.2f)
+                        CalSnapIcon(name = "star", size = 18.dp, color = CalSnapColors.OnAccent, strokeWidth = 2.2f)
                         Text(
                             text = if (isEdit) "Save changes" else "Save to library",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.W700,
-                            color = Color.White,
+                            color = CalSnapColors.OnAccent,
                         )
                     }
                 }
@@ -1058,7 +1058,7 @@ fun LogMealTabStrip(
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (isSelected) CalSnapColors.Ink else Color.Transparent)
+                    .background(if (isSelected) CalSnapColors.Accent else Color.Transparent)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -1080,14 +1080,14 @@ fun LogMealTabStrip(
                     CalSnapIcon(
                         name = icon,
                         size = 15.dp,
-                        color = if (isSelected) Color.White else CalSnapColors.Mute2,
+                        color = if (isSelected) CalSnapColors.OnAccent else CalSnapColors.Mute2,
                         strokeWidth = 2f,
                     )
                     Text(
                         text = label,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.W600,
-                        color = if (isSelected) Color.White else CalSnapColors.Mute2,
+                        color = if (isSelected) CalSnapColors.OnAccent else CalSnapColors.Mute2,
                     )
                 }
             }
@@ -1126,7 +1126,7 @@ private fun FormField(
             value = value,
             onValueChange = onValueChange,
             singleLine = true,
-            cursorBrush = SolidColor(CalSnapColors.Red),
+            cursorBrush = SolidColor(CalSnapColors.Accent),
             textStyle = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.W600, color = CalSnapColors.Ink),
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             modifier = Modifier.fillMaxWidth(),
@@ -1177,7 +1177,7 @@ private fun MacroField(
                 value = value,
                 onValueChange = onValueChange,
                 singleLine = true,
-                cursorBrush = SolidColor(CalSnapColors.Red),
+                cursorBrush = SolidColor(CalSnapColors.Accent),
                 textStyle = TextStyle(
                     fontSize = 22.sp,
                     fontWeight = FontWeight.W700,
@@ -1201,4 +1201,4 @@ private fun MacroField(
 // Glass/card surface helpers — shared within this package
 @Composable
 internal fun glassOrSurface(): Color =
-    if (isIosPlatform) Color.White.copy(alpha = 0.55f) else CalSnapColors.SurfaceAlt
+    if (isIosPlatform) CalSnapColors.Card.copy(alpha = 0.55f) else CalSnapColors.SurfaceAlt

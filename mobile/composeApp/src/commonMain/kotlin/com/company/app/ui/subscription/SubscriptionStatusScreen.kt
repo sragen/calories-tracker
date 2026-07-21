@@ -53,7 +53,7 @@ fun SubscriptionStatusScreen(
             is SubscriptionState.Loading -> {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color = CalSnapColors.Red,
+                    color = CalSnapColors.Accent,
                 )
             }
             is SubscriptionState.Entitled -> {
@@ -75,10 +75,10 @@ fun SubscriptionStatusScreen(
                         .align(Alignment.Center)
                         .padding(CalSnapSpacing.xl)
                         .clip(RoundedCornerShape(CalSnapRadius.md))
-                        .background(CalSnapColors.RedSoft)
+                        .background(CalSnapColors.BadSoft)
                         .padding(CalSnapSpacing.md),
                 ) {
-                    Text(s.message, style = CalSnapType.Body, color = CalSnapColors.Red, textAlign = TextAlign.Center)
+                    Text(s.message, style = CalSnapType.Body, color = CalSnapColors.Bad, textAlign = TextAlign.Center)
                 }
             }
             else -> {}
@@ -137,8 +137,7 @@ private fun EntitledContent(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(CalSnapRadius.card))
-                .background(CalSnapColors.Background)
+                .calSnapCard()
                 .padding(CalSnapSpacing.cardPad),
             verticalArrangement = Arrangement.spacedBy(CalSnapSpacing.sm),
         ) {

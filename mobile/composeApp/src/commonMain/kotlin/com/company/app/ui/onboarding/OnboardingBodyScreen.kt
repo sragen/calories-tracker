@@ -323,7 +323,7 @@ private fun HorizontalRuler(
                 .padding(top = 4.dp)
                 .width(2.dp)
                 .height(40.dp)
-                .background(CalSnapColors.Red),
+                .background(CalSnapColors.Accent),
         )
     }
 }
@@ -356,14 +356,14 @@ private fun GenderChip(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(CalSnapRadius.md))
-            .background(if (isSelected) CalSnapColors.Ink else CalSnapColors.Surface)
+            .background(if (isSelected) CalSnapColors.Accent else CalSnapColors.Surface)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = label,
             style = CalSnapType.BodyLarge,
-            color = if (isSelected) CalSnapColors.Background else CalSnapColors.Muted,
+            color = if (isSelected) CalSnapColors.OnAccent else CalSnapColors.Muted,
         )
     }
 }

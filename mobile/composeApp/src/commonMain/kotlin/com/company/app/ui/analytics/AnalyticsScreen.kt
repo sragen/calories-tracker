@@ -56,7 +56,7 @@ fun AnalyticsScreen(
             state.isLoading -> {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color = CalSnapColors.Red,
+                    color = CalSnapColors.Accent,
                 )
             }
             !state.isPremium -> {
@@ -98,10 +98,10 @@ fun AnalyticsScreen(
                                     .fillMaxWidth()
                                     .padding(horizontal = 20.dp)
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(CalSnapColors.RedSoft)
+                                    .background(CalSnapColors.AccentSoft)
                                     .padding(12.dp),
                             ) {
-                                Text(it, fontSize = 13.sp, color = CalSnapColors.Red)
+                                Text(it, fontSize = 13.sp, color = CalSnapColors.Accent)
                             }
                         }
                     }
@@ -151,14 +151,7 @@ private fun DailyAverageCard(
 
     Column(
         modifier = modifier
-            .shadow(
-                elevation = 6.dp,
-                shape = RoundedCornerShape(22.dp),
-                ambientColor = Color(0x0A140F08),
-                spotColor = Color(0x10140F08),
-            )
-            .clip(RoundedCornerShape(22.dp))
-            .background(CalSnapColors.Background)
+            .calSnapCard(radius = 22.dp)
             .padding(18.dp),
     ) {
         Text(
@@ -176,6 +169,7 @@ private fun DailyAverageCard(
             Text(
                 text = formatThousands(avgCalories.roundToInt()),
                 fontSize = 40.sp,
+                fontFamily = numeralFont,
                 fontWeight = FontWeight.W700,
                 color = CalSnapColors.Ink,
                 letterSpacing = (-1.5).sp,
@@ -218,7 +212,7 @@ private fun WeeklyBarChart(
     )
 
     val ink = CalSnapColors.Ink
-    val red = CalSnapColors.Red
+    val accent = CalSnapColors.Accent
     val muted = CalSnapColors.Muted
 
     Column(modifier = modifier) {
@@ -239,7 +233,7 @@ private fun WeeklyBarChart(
                 if (goalKcal > 0) {
                     val y = h * (1f - (goalKcal / maxVal).toFloat()).coerceIn(0f, 1f)
                     drawLine(
-                        color = red,
+                        color = accent,
                         start = Offset(0f, y),
                         end = Offset(w, y),
                         strokeWidth = 1.5.dp.toPx(),
@@ -256,7 +250,7 @@ private fun WeeklyBarChart(
                     val y = h - barH
                     val isToday = i == todayIdx
                     drawRoundedBar(
-                        color = if (isToday) red else ink.copy(alpha = 0.85f),
+                        color = if (isToday) accent else ink.copy(alpha = 0.85f),
                         x = x, y = y, w = barW, h = barH,
                         radiusPx = 6.dp.toPx(),
                     )
@@ -268,7 +262,7 @@ private fun WeeklyBarChart(
                 Text(
                     text = "${formatThousands(goalKcal.roundToInt())} goal",
                     fontSize = 10.sp,
-                    color = red,
+                    color = accent,
                     fontWeight = FontWeight.W700,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -286,7 +280,7 @@ private fun WeeklyBarChart(
                     text = d,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.W700,
-                    color = if (i == todayIdx) red else muted,
+                    color = if (i == todayIdx) accent else muted,
                 )
             }
         }
@@ -327,14 +321,7 @@ private fun MacroSplitCard(
 
     Column(
         modifier = modifier
-            .shadow(
-                elevation = 6.dp,
-                shape = RoundedCornerShape(22.dp),
-                ambientColor = Color(0x0A140F08),
-                spotColor = Color(0x10140F08),
-            )
-            .clip(RoundedCornerShape(22.dp))
-            .background(CalSnapColors.Background)
+            .calSnapCard(radius = 22.dp)
             .padding(18.dp),
     ) {
         Text(

@@ -1,19 +1,22 @@
 package com.company.app.ui.theme
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 
-private val CalSnapColorScheme = lightColorScheme(
+// darkColorScheme (not light) — Material uses this to pick defaults for system
+// components: sheet scrims, text-field containers, ripple and elevation tints.
+private val CalSnapColorScheme = darkColorScheme(
     primary            = CalSnapColors.Ink,
     onPrimary          = CalSnapColors.Background,
     primaryContainer   = CalSnapColors.SurfaceAlt,
     onPrimaryContainer = CalSnapColors.Ink,
 
-    secondary          = CalSnapColors.Red,
-    onSecondary        = CalSnapColors.Background,
-    secondaryContainer = CalSnapColors.RedSoft,
-    onSecondaryContainer = CalSnapColors.RedDark,
+    secondary          = CalSnapColors.Accent,
+    onSecondary        = CalSnapColors.OnAccent,
+    secondaryContainer = CalSnapColors.AccentSoft,
+    onSecondaryContainer = CalSnapColors.Ink,
 
     background         = CalSnapColors.Background,
     onBackground       = CalSnapColors.Ink,
@@ -26,14 +29,16 @@ private val CalSnapColorScheme = lightColorScheme(
     outline            = CalSnapColors.Border,
     outlineVariant     = CalSnapColors.Divider,
 
-    error              = CalSnapColors.Red,
-    onError            = CalSnapColors.Background,
+    error              = CalSnapColors.Bad,
+    onError            = CalSnapColors.OnAccent,
 )
 
 @Composable
 fun CalSnapTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = CalSnapColorScheme,
-        content = content,
-    )
+    CompositionLocalProvider(LocalNumeralFont provides spaceGroteskFamily()) {
+        MaterialTheme(
+            colorScheme = CalSnapColorScheme,
+            content = content,
+        )
+    }
 }

@@ -141,7 +141,7 @@ fun OnboardingGoalScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(14.dp))
-                .background(CalSnapColors.RedSoft)
+                .background(CalSnapColors.AccentSoft)
                 .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.Top,
@@ -150,14 +150,14 @@ fun OnboardingGoalScreen(
                 modifier = Modifier
                     .size(32.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(Color.White),
+                    .background(CalSnapColors.Card),
                 contentAlignment = Alignment.Center,
             ) {
-                CalSnapIcon(name = "sparkle", size = 16.dp, color = CalSnapColors.Red)
+                CalSnapIcon(name = "sparkle", size = 16.dp, color = CalSnapColors.Accent)
             }
             Text(
                 text = buildAnnotatedString {
-                    withStyle(SpanStyle(color = CalSnapColors.Red, fontWeight = FontWeight.Bold)) {
+                    withStyle(SpanStyle(color = CalSnapColors.Accent, fontWeight = FontWeight.Bold)) {
                         append("Tip")
                     }
                     append(" — most people lose 0.5–1 lb / week comfortably. We'll set a safe deficit.")
@@ -186,10 +186,10 @@ private fun GoalCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(CalSnapRadius.card))
-            .background(Color.White)
+            .background(CalSnapColors.Card)
             .border(
                 width = 2.dp,
-                color = if (isSelected) CalSnapColors.Ink else Color.Transparent,
+                color = if (isSelected) CalSnapColors.Accent else Color.Transparent,
                 shape = RoundedCornerShape(CalSnapRadius.card),
             )
             .clickable(
@@ -206,14 +206,14 @@ private fun GoalCard(
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(if (isSelected) CalSnapColors.Ink else CalSnapColors.SurfaceAlt),
+                .background(if (isSelected) CalSnapColors.Accent else CalSnapColors.SurfaceAlt),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = option.symbol,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isSelected) Color.White else CalSnapColors.Ink,
+                color = if (isSelected) CalSnapColors.OnAccent else CalSnapColors.Ink,
             )
         }
 
@@ -238,16 +238,16 @@ private fun GoalCard(
             modifier = Modifier
                 .size(22.dp)
                 .clip(CircleShape)
-                .background(if (isSelected) CalSnapColors.Ink else Color.Transparent)
+                .background(if (isSelected) CalSnapColors.Accent else Color.Transparent)
                 .border(
                     width = 2.dp,
-                    color = if (isSelected) CalSnapColors.Ink else Color(0xFFD8D2C5),
+                    color = if (isSelected) CalSnapColors.Accent else CalSnapColors.Border,
                     shape = CircleShape,
                 ),
             contentAlignment = Alignment.Center,
         ) {
             if (isSelected) {
-                CalSnapIcon(name = "check", size = 12.dp, color = Color.White, strokeWidth = 3f)
+                CalSnapIcon(name = "check", size = 12.dp, color = CalSnapColors.Background, strokeWidth = 3f)
             }
         }
     }
